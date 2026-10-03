@@ -3,9 +3,6 @@ import showcaseHacksEditImg from '../assets/images/showcase_hacks_edit_179052875
 import showcaseViralRetentionImg from '../assets/images/showcase_viral_retention_1790528765326.jpg';
 import showcaseColorGradeImg from '../assets/images/showcase_color_grade_1790528777648.jpg';
 import reelTalkingHeadImg from '../assets/images/reel_talking_head_creator_1790941012242.jpg';
-import reelSportsRunnerImg from '../assets/images/reel_sports_runner_action_1790941029854.jpg';
-import reelCarSpeedRampImg from '../assets/images/reel_car_speed_ramp_1790941042144.jpg';
-import reelDocumentaryImg from '../assets/images/reel_documentary_cinematic_1790941054742.jpg';
 
 export interface PortfolioCarouselVideo {
   id: number;
@@ -13,10 +10,6 @@ export interface PortfolioCarouselVideo {
   category: string;
   src: string;
   poster: string;
-  duration: string;
-  retentionMetric: string;
-  software: string;
-  description: string;
   showcaseId: string;
 }
 
@@ -24,112 +17,31 @@ export interface PortfolioCarouselVideo {
  * 9:16 Portrait Video Cards for the Continuous Circular/Orbiting 3D Stage.
  * Every card strictly renders in a 9:16 portrait aspect ratio with object-fit: cover.
  */
-export const portfolioVideos: PortfolioCarouselVideo[] = [
-  {
-    id: 1,
-    title: 'Studio Talking Head Hook',
-    category: 'Talking Head • Reels',
-    src: 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
-    poster: reelTalkingHeadImg,
-    duration: '00:58',
-    retentionMetric: '94.2% Retention',
-    software: 'Premiere Pro • After Effects • CapCut',
-    description:
-      'High-retention 9:16 talking-head studio edit featuring 3-second visual hooks, dynamic captions, and layered SFX.',
-    showcaseId: 'hacks-edit-latest',
-  },
-  {
-    id: 2,
-    title: 'Lifestyle Creator Viral Cut',
-    category: 'Short Video Editing',
-    src: 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4',
-    poster: showcaseHacksEditImg,
-    duration: '00:48',
-    retentionMetric: '92.8% Watch Time',
-    software: 'CapCut Pro • Premiere Pro',
-    description:
-      'Fast-paced vertical creator storytelling with seamless J-cuts, kinetic typography, and retention b-roll.',
-    showcaseId: 'hacks-edit-latest',
-  },
-  {
-    id: 3,
-    title: 'Product & Brand Hook Reel',
-    category: 'Content Strategy',
-    src: 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4',
-    poster: reelCarSpeedRampImg,
-    duration: '00:42',
-    retentionMetric: '96.0% Beat Sync',
-    software: 'After Effects • DaVinci Resolve • CapCut',
-    description:
-      'Precision optical-flow speed ramping, bass-synced impact cuts, motion blur compositing, and automotive color grading.',
-    showcaseId: 'car-speed-ramp',
-  },
-  {
-    id: 4,
-    title: 'Golden Hour Athlete Action',
-    category: 'Sports Brand • Hacks',
-    src: 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4',
-    poster: reelSportsRunnerImg,
-    duration: '00:45',
-    retentionMetric: '91.8% Watch-Through',
-    software: 'Premiere Pro • After Effects • Audition',
-    description:
-      'High-adrenaline 9:16 sports brand page reel engineered with whip transitions, riser sound design, and kinetic callouts.',
-    showcaseId: 'sports-brand-edit',
-  },
-  {
-    id: 5,
-    title: 'Misty Forest Documentary',
-    category: 'Documentary • Grade',
-    src: 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
-    poster: reelDocumentaryImg,
-    duration: '01:15',
-    retentionMetric: '89.6% Avg View',
-    software: 'DaVinci Resolve • Premiere Pro • Audition',
-    description:
-      'Atmospheric vertical documentary pacing with archival overlays, 3D camera projection, emotional soundscapes, and filmic grading.',
-    showcaseId: 'documentary-story',
-  },
-  {
-    id: 6,
-    title: 'Neon Studio Creator Cut',
-    category: 'Talking Head • CapCut',
-    src: 'https://storage.googleapis.com/gtv-videos-bucket/sample/WeAreGoingOnBullrun.mp4',
-    poster: heroEditingSuiteImg,
-    duration: '00:52',
-    retentionMetric: '93.4% 3s Hold',
-    software: 'CapCut Pro • After Effects',
-    description:
-      'Clean creator talking-head cut eliminating dead air with J/L cuts, custom motion graphics callouts, and retention b-roll.',
-    showcaseId: 'hacks-edit-latest',
-  },
-  {
-    id: 7,
-    title: 'Executive Authority Short',
-    category: 'Growth Optimization',
-    src: 'https://storage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackSeeTheWorld.mp4',
-    poster: showcaseViralRetentionImg,
-    duration: '00:55',
-    retentionMetric: '95.1% Completion',
-    software: 'Premiere Pro • DaVinci Resolve',
-    description:
-      'Founder & executive talking-head vertical reel engineered to build brand trust and maximize organic subscriber conversion.',
-    showcaseId: 'documentary-story',
-  },
-  {
-    id: 8,
-    title: 'Midnight Tunnel Car Edit',
-    category: 'Car Edit • Speed Ramp',
-    src: 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4',
-    poster: showcaseColorGradeImg,
-    duration: '00:38',
-    retentionMetric: '97.2% Replay Rate',
-    software: 'After Effects • CapCut Pro • DaVinci Resolve',
-    description:
-      'Seamless loop 9:16 automotive speed-ramp edit with custom turbo foley, halation glow, and frame-accurate beat locks.',
-    showcaseId: 'car-speed-ramp',
-  },
-];
+const portfolioVideoFiles = [
+  ['WhatsApp Video 2026-09-13 at 2.11.00 PM.mp4', 'WhatsApp Reel', 'Creator Reel', 'hacks-edit-latest'],
+  ['AE-Giveaway-PR.mp4', 'AE Giveaway PR', 'Brand Reel', 'sports-brand-edit'],
+  ['brand-edit.mp4', 'Brand Edit', 'Brand Reel', 'sports-brand-edit'],
+  ['REEL 2.mp4', 'Reel 2', 'Short-Form Reel', 'hacks-edit-latest'],
+  ['REEL 4.mp4', 'Reel 4', 'Short-Form Reel', 'car-speed-ramp'],
+  ['REEL 5.mp4', 'Reel 5', 'Short-Form Reel', 'documentary-story'],
+  ['REEL 6.mp4', 'Reel 6', 'Short-Form Reel', 'documentary-story'],
+  ['REEL 7(1).mp4', 'Reel 7', 'Short-Form Reel', 'car-speed-ramp'],
+  ['SAMPLE LIKE AYUSH BHANDARI.mp4', 'Ayush Bhandari Sample', 'Creator Reel', 'hacks-edit-latest'],
+  ['SAMPLE(1).mp4', 'Sample Reel', 'Short-Form Reel', 'hacks-edit-latest'],
+  ['SHIVJI.mp4', 'Shivji', 'Cinematic Reel', 'documentary-story'],
+  ['trading.mp4', 'Trading', 'Creator Reel', 'hacks-edit-latest'],
+] as const;
+
+export const portfolioVideos: PortfolioCarouselVideo[] = portfolioVideoFiles.map(
+  ([fileName, title, category, showcaseId], index) => ({
+    id: index + 1,
+    title,
+    category,
+    src: `/videos/${encodeURIComponent(fileName)}`,
+    poster: '',
+    showcaseId,
+  })
+);
 
 export interface ServiceItem {
   index: string;
@@ -225,6 +137,11 @@ export const EXPERIENCE_PILLARS = [
     code: '06',
     title: 'GAMING EDIT',
     detail: 'Specialized in high-energy Minecraft and GTA video editing with cinematic cuts, effects, and engaging storytelling.',
+  },
+  {
+    code: '07',
+    title: 'AI VIDEO EDITING',
+    detail: 'Leveraging AI tools for efficient video editing, including automated cuts, captioning, and content optimization.',
   },
 ];
 

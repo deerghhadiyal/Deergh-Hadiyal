@@ -178,7 +178,7 @@ export default function App() {
           { opacity: 1, transform: 'translate3d(0, 0, 0)' },
         ],
         {
-          duration: 3000,
+          duration: 1000,
           delay: Number(target.dataset.revealDelay) || 0,
           easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
         }
@@ -230,29 +230,57 @@ export default function App() {
   useEffect(() => {
     if (typeof IntersectionObserver === 'undefined') return;
 
+    const visibleVideos = new Set<HTMLVideoElement>();
+    let activeVideo: HTMLVideoElement | null = null;
+    const updateActiveVideo = () => {
+      const nextVideo =
+        Array.from(document.querySelectorAll<HTMLVideoElement>('[data-showcase-video]')).find(
+          (video) => visibleVideos.has(video)
+        ) ?? null;
+      if (nextVideo === activeVideo) return;
+
+      if (activeVideo) {
+        activeVideo.pause();
+        activeVideo.removeAttribute('src');
+        activeVideo.load();
+      }
+
+      activeVideo = nextVideo;
+      if (activeVideo) {
+        activeVideo.poster = activeVideo.dataset.poster || '';
+        activeVideo.src = activeVideo.dataset.src || '';
+        activeVideo.play().catch(() => {});
+      }
+    };
+
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           const video = entry.target as HTMLVideoElement;
           if (entry.isIntersecting) {
-            if (!video.src) {
-              video.poster = video.dataset.poster || '';
-              video.src = video.dataset.src || '';
-            }
-            video.play().catch(() => {});
+            visibleVideos.add(video);
           } else {
-            video.pause();
+            visibleVideos.delete(video);
           }
         });
+        updateActiveVideo();
       },
-      { rootMargin: '180px 0px', threshold: 0.1 }
+      { threshold: 0.1 }
     );
 
     document.querySelectorAll<HTMLVideoElement>('[data-showcase-video]').forEach((video) => {
       observer.observe(video);
     });
 
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      visibleVideos.clear();
+      if (activeVideo) {
+        activeVideo.pause();
+        activeVideo.removeAttribute('src');
+        activeVideo.load();
+      }
+    };
   }, [activeVideoFilter, customEmbeds]);
 
   const handleCopyText = (key: string, text: string) => {

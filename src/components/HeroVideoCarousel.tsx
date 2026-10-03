@@ -10,48 +10,49 @@ interface CircularPortraitOrbitProps {
   compact?: boolean;
 }
 
-/** Persistent 9:16 video player that loads only when focused near the viewport. */
+/** 9:16 player that only loads the center card and its immediate neighbors. */
 function PortraitVideoPlayer({
   video,
   isVisibleInViewport,
+  isActive,
+  shouldLoad,
 }: {
   video: PortfolioCarouselVideo;
   isVisibleInViewport: boolean;
+  isActive: boolean;
+  shouldLoad: boolean;
 }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const [isCardVisible, setIsCardVisible] = useState(false);
   const [hasLoaded, setHasLoaded] = useState(false);
-  const shouldPlay = isVisibleInViewport && isCardVisible;
-
-  useEffect(() => {
-    const videoEl = videoRef.current;
-    if (!videoEl || typeof IntersectionObserver === 'undefined') return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => setIsCardVisible(entry.isIntersecting),
-      { rootMargin: '80px', threshold: 0.05 }
-    );
-    observer.observe(videoEl);
-    return () => observer.disconnect();
-  }, []);
+  const canLoad = isVisibleInViewport && shouldLoad;
+  const shouldPlay = canLoad && isActive;
 
   useEffect(() => {
     const videoEl = videoRef.current;
     if (!videoEl) return;
 
-    if (shouldPlay) {
+    if (canLoad) {
       setHasLoaded(true);
-      videoEl.play().catch(() => {});
+      if (shouldPlay) {
+        videoEl.play().catch(() => {});
+      } else {
+        videoEl.pause();
+      }
     } else {
       videoEl.pause();
+      if (hasLoaded) {
+        videoEl.removeAttribute('src');
+        videoEl.load();
+        setHasLoaded(false);
+      }
     }
-  }, [shouldPlay]);
+  }, [canLoad, shouldPlay, hasLoaded]);
 
   return (
     <video
       ref={videoRef}
       src={hasLoaded ? video.src : undefined}
-      poster={isCardVisible ? video.poster : undefined}
+      poster={video.poster || undefined}
       muted
       loop
       playsInline
@@ -85,8 +86,19 @@ export function CircularPortraitOrbit({
   const total = videos.length;
   const [hoveredId, setHoveredId] = useState<number | null>(null);
   const [tappedId, setTappedId] = useState<number | null>(null);
-  const [isVisibleInViewport, setIsVisibleInViewport] = useState<boolean>(true);
-  const [isScrolling, setIsScrolling] = useState(false);
+  const [isVisibleInViewport, setIsVisibleInViewport] = useState<boolean>(false);
+  const initialCenterIndex = Math.floor(total / 2);
+  const [autoPlayId, setAutoPlayId] = useState<number | null>(
+    () => videos[initialCenterIndex]?.id ?? null
+  );
+  const [preloadedVideoIds, setPreloadedVideoIds] = useState<Set<number>>(
+    () =>
+      new Set(
+        [-1, 0, 1]
+          .map((offset) => videos[(initialCenterIndex + offset + total) % total]?.id)
+          .filter((id): id is number => id !== undefined)
+      )
+  );
 
   const stageRef = useRef<HTMLDivElement | null>(null);
   const cardOrbitRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -94,23 +106,9 @@ export function CircularPortraitOrbit({
   const lastTimeRef = useRef<number | null>(null);
   const hoveredIdRef = useRef<number | null>(null);
   const tappedIdRef = useRef<number | null>(null);
+  const autoPlayIdRef = useRef<number | null>(videos[initialCenterIndex]?.id ?? null);
 
-  const activeFocusId = hoveredId ?? tappedId;
-
-  useEffect(() => {
-    let scrollIdleTimer: number | undefined;
-    const handleScroll = () => {
-      setIsScrolling(true);
-      window.clearTimeout(scrollIdleTimer);
-      scrollIdleTimer = window.setTimeout(() => setIsScrolling(false), 140);
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => {
-      window.clearTimeout(scrollIdleTimer);
-      window.removeEventListener('scroll', handleScroll);
-    };
-  }, []);
+  const activeFocusId = hoveredId ?? tappedId ?? autoPlayId;
 
   useEffect(() => {
     hoveredIdRef.current = hoveredId;
@@ -123,7 +121,11 @@ export function CircularPortraitOrbit({
   // Pause offscreen video decoding only when scrolled completely out of view
   useEffect(() => {
     const el = stageRef.current;
-    if (!el || typeof IntersectionObserver === 'undefined') return;
+    if (!el) return;
+    if (typeof IntersectionObserver === 'undefined') {
+      setIsVisibleInViewport(true);
+      return;
+    }
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -169,6 +171,19 @@ export function CircularPortraitOrbit({
             : Math.min(stageWidth * 0.145, 192);
 
         const halfN = total / 2;
+        const centerIndex = Math.round(phaseRef.current + halfN) % total;
+        const centerVideoId = videos[centerIndex]?.id ?? null;
+        if (centerVideoId !== autoPlayIdRef.current) {
+          autoPlayIdRef.current = centerVideoId;
+          setAutoPlayId(centerVideoId);
+          setPreloadedVideoIds(
+            new Set(
+              [-1, 0, 1]
+                .map((offset) => videos[(centerIndex + offset + total) % total]?.id)
+                .filter((id): id is number => id !== undefined)
+            )
+          );
+        }
 
         for (let i = 0; i < total; i++) {
           const el = cardOrbitRefs.current[i];
@@ -176,7 +191,9 @@ export function CircularPortraitOrbit({
 
           const videoId = videos[i].id;
           const isFocused =
-            hoveredIdRef.current === videoId || tappedIdRef.current === videoId;
+            hoveredIdRef.current === videoId ||
+            tappedIdRef.current === videoId ||
+            autoPlayIdRef.current === videoId;
 
           // Continuous circular slot offset u in [-N/2, +N/2)
           const rawDiff = ((i - phaseRef.current) % total + total) % total;
@@ -270,6 +287,7 @@ export function CircularPortraitOrbit({
       <div className="relative w-full h-full flex items-center justify-center preserve-3d">
         {videos.map((video, index) => {
           const isFocused = activeFocusId === video.id;
+          const isHovered = hoveredId === video.id || tappedId === video.id;
           const isDimmed = activeFocusId !== null && activeFocusId !== video.id;
 
           return (
@@ -282,8 +300,6 @@ export function CircularPortraitOrbit({
                 willChange: 'transform, opacity',
                 transformStyle: 'preserve-3d',
               }}
-              onMouseEnter={() => setHoveredId(video.id)}
-              onMouseLeave={() => setHoveredId((prev) => (prev === video.id ? null : prev))}
               onClick={(e) => {
                 e.stopPropagation();
                 // On touch/mobile devices, first tap zooms in; second tap opens project inspector
@@ -313,9 +329,17 @@ export function CircularPortraitOrbit({
             >
               {/* Inner 9:16 Portrait Card Zoom & Visual Focus Layer */}
               <div
+                onPointerEnter={(event) => {
+                  if (event.pointerType === 'mouse') setHoveredId(video.id);
+                }}
+                onPointerLeave={(event) => {
+                  if (event.pointerType === 'mouse') {
+                    setHoveredId((prev) => (prev === video.id ? null : prev));
+                  }
+                }}
                 style={{
                   aspectRatio: '9 / 16',
-                  transform: isFocused
+                  transform: isHovered
                     ? 'scale3d(1.22, 1.22, 1) translate3d(0px, -10px, 45px)'
                     : 'scale3d(1, 1, 1) translate3d(0px, 0px, 0px)',
                   transition:
@@ -336,7 +360,9 @@ export function CircularPortraitOrbit({
                 {/* Strictly 9:16 Portrait HTML5 Video with object-fit: cover */}
                 <PortraitVideoPlayer
                   video={video}
-                  isVisibleInViewport={isVisibleInViewport && !isScrolling && isFocused}
+                  isVisibleInViewport={isVisibleInViewport}
+                  isActive={isFocused}
+                  shouldLoad={preloadedVideoIds.has(video.id) || isFocused}
                 />
 
                 {/* Subtle Studio Specular Edge & Bottom Vignette */}
@@ -351,10 +377,6 @@ export function CircularPortraitOrbit({
                     isFocused ? 'opacity-100' : 'opacity-0'
                   }`}
                 >
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#151311]/70 backdrop-blur-md border border-[#E4AE58]/15 text-[10px] font-mono-tabular text-[#F2EEE6]">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#E4AE58] animate-pulse" />
-                    <span>{video.duration}</span>
-                  </span>
                   <span className="px-2 py-0.5 rounded-full bg-[#332D26] text-[#F2EEE6] text-[10px] font-mono-tabular font-bold">
                     9:16
                   </span>
