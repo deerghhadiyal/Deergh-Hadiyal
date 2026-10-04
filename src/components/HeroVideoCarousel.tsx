@@ -10,59 +10,17 @@ interface CircularPortraitOrbitProps {
   compact?: boolean;
 }
 
-/** 9:16 player that only loads the center card and its immediate neighbors. */
-function PortraitVideoPlayer({
-  video,
-  isVisibleInViewport,
-  isActive,
-  shouldLoad,
-}: {
-  video: PortfolioCarouselVideo;
-  isVisibleInViewport: boolean;
-  isActive: boolean;
-  shouldLoad: boolean;
-}) {
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const [hasLoaded, setHasLoaded] = useState(false);
-  const canLoad = isVisibleInViewport && shouldLoad;
-  const shouldPlay = canLoad && isActive;
-
-  useEffect(() => {
-    const videoEl = videoRef.current;
-    if (!videoEl) return;
-
-    if (canLoad) {
-      setHasLoaded(true);
-      if (shouldPlay) {
-        videoEl.play().catch(() => {});
-      } else {
-        videoEl.pause();
-      }
-    } else {
-      videoEl.pause();
-      if (hasLoaded) {
-        videoEl.removeAttribute('src');
-        videoEl.load();
-        setHasLoaded(false);
-      }
-    }
-  }, [canLoad, shouldPlay, hasLoaded]);
-
+/** Muted looping player for every reel in the portrait orbit. */
+function PortraitVideoPlayer({ video }: { video: PortfolioCarouselVideo }) {
   return (
     <video
-      ref={videoRef}
-      src={hasLoaded ? video.src : undefined}
+      src={video.src}
       poster={video.poster || undefined}
+      autoPlay
       muted
       loop
       playsInline
-      preload={hasLoaded ? 'metadata' : 'none'}
-      onCanPlay={(e) => {
-        const el = e.currentTarget;
-        if (el.paused && shouldPlay) {
-          el.play().catch(() => {});
-        }
-      }}
+      preload="auto"
       className="w-full h-full object-cover pointer-events-none select-none"
     />
   );
@@ -91,15 +49,6 @@ export function CircularPortraitOrbit({
   const [autoPlayId, setAutoPlayId] = useState<number | null>(
     () => videos[initialCenterIndex]?.id ?? null
   );
-  const [preloadedVideoIds, setPreloadedVideoIds] = useState<Set<number>>(
-    () =>
-      new Set(
-        [-1, 0, 1]
-          .map((offset) => videos[(initialCenterIndex + offset + total) % total]?.id)
-          .filter((id): id is number => id !== undefined)
-      )
-  );
-
   const stageRef = useRef<HTMLDivElement | null>(null);
   const cardOrbitRefs = useRef<(HTMLDivElement | null)[]>([]);
   const phaseRef = useRef<number>(0);
@@ -141,10 +90,9 @@ export function CircularPortraitOrbit({
   }, []);
 
   // Continuous 60fps GPU-accelerated circular orbit loop.
-  // IMPORTANT: Hovering NEVER stops the circular orbit!
+  // The orbit stays continuous while scrolling and pauses when out of view.
   useEffect(() => {
     let rafId: number;
-    let scrollIdleTimer: number | undefined;
     const motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)');
 
     const updateOrbitPositions = (now: number) => {
@@ -176,13 +124,6 @@ export function CircularPortraitOrbit({
         if (centerVideoId !== autoPlayIdRef.current) {
           autoPlayIdRef.current = centerVideoId;
           setAutoPlayId(centerVideoId);
-          setPreloadedVideoIds(
-            new Set(
-              [-1, 0, 1]
-                .map((offset) => videos[(centerIndex + offset + total) % total]?.id)
-                .filter((id): id is number => id !== undefined)
-            )
-          );
         }
 
         for (let i = 0; i < total; i++) {
@@ -250,24 +191,11 @@ export function CircularPortraitOrbit({
         rafId = requestAnimationFrame(updateOrbitPositions);
       }
     };
-    const handleScroll = () => {
-      cancelAnimationFrame(rafId);
-      window.clearTimeout(scrollIdleTimer);
-      scrollIdleTimer = window.setTimeout(() => {
-        if (isVisibleInViewport && !motionPreference.matches) {
-          rafId = requestAnimationFrame(updateOrbitPositions);
-        }
-      }, 140);
-    };
-
     motionPreference.addEventListener('change', handleMotionPreferenceChange);
-    window.addEventListener('scroll', handleScroll, { passive: true });
 
     return () => {
       cancelAnimationFrame(rafId);
-      window.clearTimeout(scrollIdleTimer);
       motionPreference.removeEventListener('change', handleMotionPreferenceChange);
-      window.removeEventListener('scroll', handleScroll);
     };
   }, [isVisibleInViewport, total, orbitSpeed, direction, videos]);
 
@@ -360,9 +288,6 @@ export function CircularPortraitOrbit({
                 {/* Strictly 9:16 Portrait HTML5 Video with object-fit: cover */}
                 <PortraitVideoPlayer
                   video={video}
-                  isVisibleInViewport={isVisibleInViewport}
-                  isActive={isFocused}
-                  shouldLoad={preloadedVideoIds.has(video.id) || isFocused}
                 />
 
                 {/* Subtle Studio Specular Edge & Bottom Vignette */}

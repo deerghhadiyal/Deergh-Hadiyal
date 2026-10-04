@@ -1,7 +1,4 @@
 import heroEditingSuiteImg from '../assets/images/hero_editing_suite_1790528737920.jpg';
-import showcaseHacksEditImg from '../assets/images/showcase_hacks_edit_1790528752374.jpg';
-import showcaseViralRetentionImg from '../assets/images/showcase_viral_retention_1790528765326.jpg';
-import showcaseColorGradeImg from '../assets/images/showcase_color_grade_1790528777648.jpg';
 import reelTalkingHeadImg from '../assets/images/reel_talking_head_creator_1790941012242.jpg';
 
 export interface PortfolioCarouselVideo {
@@ -18,28 +15,28 @@ export interface PortfolioCarouselVideo {
  * Every card strictly renders in a 9:16 portrait aspect ratio with object-fit: cover.
  */
 const portfolioVideoFiles = [
-  ['WhatsApp Video 2026-09-13 at 2.11.00 PM.mp4', 'WhatsApp Reel', 'Creator Reel', 'hacks-edit-latest'],
-  ['AE-Giveaway-PR.mp4', 'AE Giveaway PR', 'Brand Reel', 'sports-brand-edit'],
-  ['brand-edit.mp4', 'Brand Edit', 'Brand Reel', 'sports-brand-edit'],
-  ['REEL 2.mp4', 'Reel 2', 'Short-Form Reel', 'hacks-edit-latest'],
-  ['REEL 4.mp4', 'Reel 4', 'Short-Form Reel', 'car-speed-ramp'],
-  ['REEL 5.mp4', 'Reel 5', 'Short-Form Reel', 'documentary-story'],
-  ['REEL 6.mp4', 'Reel 6', 'Short-Form Reel', 'documentary-story'],
-  ['REEL 7(1).mp4', 'Reel 7', 'Short-Form Reel', 'car-speed-ramp'],
-  ['SAMPLE LIKE AYUSH BHANDARI.mp4', 'Ayush Bhandari Sample', 'Creator Reel', 'hacks-edit-latest'],
-  ['SAMPLE(1).mp4', 'Sample Reel', 'Short-Form Reel', 'hacks-edit-latest'],
-  ['SHIVJI.mp4', 'Shivji', 'Cinematic Reel', 'documentary-story'],
-  ['trading.mp4', 'Trading', 'Creator Reel', 'hacks-edit-latest'],
+  ['WhatsApp Video 2026-09-13 at 2.11.00 PM.mp4', 'WhatsApp Reel', 'Creator Reel'],
+  ['AE-Giveaway-PR.mp4', 'AE Giveaway PR', 'Brand Reel'],
+  ['brand-edit.mp4', 'Brand Edit', 'Brand Reel'],
+  ['REEL 2.mp4', 'MINECRFAT Reel 2', 'Short-Form Reel'],
+  ['REEL 4.mp4', 'MINECRFAT Reel 4', 'Short-Form Reel'],
+  ['REEL 5.mp4', 'MINECRFAT Reel 5', 'Short-Form Reel'],
+  ['REEL 6.mp4', 'MINECRFAT Reel 6', 'Short-Form Reel'],
+  ['REEL 7(1).mp4', 'MINECRFAT Reel 7', 'Short-Form Reel'],
+  ['SAMPLE LIKE AYUSH BHANDARI.mp4', 'Ayush Bhandari Sample', 'Creator Reel'],
+  ['SAMPLE(1).mp4', 'YT EDIT', 'Short-Form Reel'],
+  ['SHIVJI.mp4', 'Shivji', 'Cinematic Reel'],
+  ['trading.mp4', 'Trading VIDEO EDIT', 'Creator Reel'],
 ] as const;
 
 export const portfolioVideos: PortfolioCarouselVideo[] = portfolioVideoFiles.map(
-  ([fileName, title, category, showcaseId], index) => ({
+  ([fileName, title, category], index) => ({
     id: index + 1,
     title,
     category,
     src: `/videos/${encodeURIComponent(fileName)}`,
-    poster: '',
-    showcaseId,
+    poster: reelTalkingHeadImg,
+    showcaseId: `reel-${fileName}`,
   })
 );
 
@@ -65,14 +62,14 @@ export interface TimelineCutMarker {
 
 export interface VideoShowcaseItem {
   id: string;
-  category: 'hacks-edit' | 'car-speed' | 'sports-brand' | 'documentary';
+  category: 'imported';
   categoryLabel: string;
   title: string;
   subtitle: string;
   description: string;
   thumbnail: string;
   videoSrc: string;
-  aspect: '16:9';
+  aspect: '16:9' | '9:16';
   featuredSpan?: boolean;
   duration: string;
   fps: string;
@@ -84,6 +81,7 @@ export interface VideoShowcaseItem {
   colorFilterRaw: string;
   colorFilterGraded: string;
   timelineMarkers: TimelineCutMarker[];
+  fit?: 'cover' | 'contain';
 }
 
 export interface WorkProcessItem {
@@ -229,169 +227,65 @@ export const WHY_CHOOSE_ME: FeatureReason[] = [
   },
 ];
 
-export const VIDEO_SHOWCASE: VideoShowcaseItem[] = [
-  {
-    id: 'hacks-edit-latest',
-    category: 'hacks-edit',
-    categoryLabel: 'HACKS EDIT • Talking Head',
-    title: 'Latest Upload — High-Velocity Talking Head & Viral Hook',
-    subtitle: 'Check out my most recent 16:9 widescreen edit from the HACKS EDIT series',
-    description:
-      'Fast-paced 16:9 talking-head and entertainment editing combining frame-accurate speed ramps, kinetic captioning, layered whoosh/impact sound design, and zero-dead-air storytelling.',
-    thumbnail: showcaseHacksEditImg,
-    videoSrc: 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
-    aspect: '16:9',
-    featuredSpan: true,
-    duration: '00:58',
-    fps: '60 fps',
-    resolution: '3840x2160 4K',
-    avgRetention: '94.2%',
-    hookRate: '88.5%',
-    softwareUsed: 'Premiere Pro · After Effects · CapCut',
-    defaultYoutubeUrl: 'https://youtube.com/@deerghhadiyal',
-    colorFilterRaw: 'saturate(0.55) contrast(0.85) brightness(0.95)',
-    colorFilterGraded: 'saturate(1.22) contrast(1.14) brightness(1.02)',
-    timelineMarkers: [
-      {
-        time: '00:00–00:03',
-        label: 'Visual + Sonic Hook',
-        detail: 'Immediate 16:9 motion cut paired with sub-bass drop and central kinetic title.',
-      },
-      {
-        time: '00:04–00:19',
-        label: 'Talking-Head Pattern Interrupts',
-        detail: 'Visual angle or b-roll state change every 1.8 seconds to reset viewer attention.',
-      },
-      {
-        time: '00:20–00:45',
-        label: 'Escalating Tension & SFX',
-        detail: 'Layered riser audio, dynamic zoom tracking, and custom motion callouts.',
-      },
-      {
-        time: '00:46–00:58',
-        label: 'Seamless Loop Payoff',
-        detail: 'Resolution cut engineered to flow directly back into frame 00:00 for replay boost.',
-      },
-    ],
-  },
-  {
-    id: 'car-speed-ramp',
-    category: 'car-speed',
-    categoryLabel: 'Car Edit • Speed Ramp',
-    title: 'Featured Work — Automotive 16:9 Speed Ramp & Beat Sync',
-    subtitle: 'High-impact widescreen car edit with optical flow speed ramps and LUT grading',
-    description:
-      'Engineered with razor-sharp velocity curves in After Effects and CapCut, syncing widescreen automotive shots to heavy percussive stems with custom engine audio sweetening and halation glow.',
-    thumbnail: showcaseColorGradeImg,
-    videoSrc: 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4',
-    aspect: '16:9',
-    featuredSpan: false,
-    duration: '00:42',
-    fps: '60 fps',
-    resolution: '3840x2160 4K',
-    avgRetention: '96.0%',
-    hookRate: '91.4%',
-    softwareUsed: 'After Effects · DaVinci Resolve · CapCut',
-    defaultYoutubeUrl: 'https://youtube.com/@deerghhadiyal',
-    colorFilterRaw: 'saturate(0.45) contrast(0.80) brightness(0.92)',
-    colorFilterGraded: 'saturate(1.25) contrast(1.18) brightness(1.04)',
-    timelineMarkers: [
-      {
-        time: '00:00–00:03',
-        label: 'Exhaust Roar & Flash Frame',
-        detail: 'L-cut turbo spool audio leading into a 400% optical-flow speed ramp entry.',
-      },
-      {
-        time: '00:04–00:24',
-        label: 'Graph-Editor Velocity Curves',
-        detail: 'Custom ease-in/ease-out time remapping locked to every snare and sub-bass transient.',
-      },
-      {
-        time: '00:25–00:42',
-        label: 'Split-Tone Night Grade',
-        detail: 'Warm sodium-orange highlights (#FF6A32) balanced against deep carbon-black shadows.',
-      },
-    ],
-  },
-  {
-    id: 'sports-brand-edit',
-    category: 'sports-brand',
-    categoryLabel: 'Sports Brand Page • Commercial',
-    title: 'Sports Brand Page — High-Energy Widescreen Athlete Reel',
-    subtitle: 'Trending 16:9 sports & brand content optimized for maximum engagement',
-    description:
-      'Built for competitive sports brand pages and commercial campaigns. Combines crowd-roar soundscapes, dynamic speed-ramped action cuts, and bold kinetic stat overlays.',
-    thumbnail: showcaseViralRetentionImg,
-    videoSrc: 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4',
-    aspect: '16:9',
-    featuredSpan: false,
-    duration: '00:45',
-    fps: '60 fps',
-    resolution: '3840x2160 4K',
-    avgRetention: '91.8%',
-    hookRate: '86.0%',
-    softwareUsed: 'Premiere Pro · After Effects · Audition',
-    defaultYoutubeUrl: 'https://youtube.com/@deerghhadiyal',
-    colorFilterRaw: 'saturate(0.5) contrast(0.82) sepia(0.08)',
-    colorFilterGraded: 'saturate(1.18) contrast(1.16) brightness(1.03)',
-    timelineMarkers: [
-      {
-        time: '00:00–00:02',
-        label: 'Curiosity Gap Opener',
-        detail: 'High-contrast athlete freeze-frame and kinetic brand callout in the first 48 frames.',
-      },
-      {
-        time: '00:03–00:28',
-        label: 'Rhythmic Pacing & Speed Ramps',
-        detail: 'Action trimmed to peak impact frames; synced to 128 BPM percussive stadium stem.',
-      },
-      {
-        time: '00:29–00:45',
-        label: 'High-Impact Brand Climax',
-        detail: 'Speed-ramped finisher with optical glow and stereo-widened sound design.',
-      },
-    ],
-  },
-  {
-    id: 'documentary-story',
-    category: 'documentary',
-    categoryLabel: 'Documentary • Cinematic Narrative',
-    title: 'Studio Quality — 16:9 Documentary Storytelling & Grade',
-    subtitle: 'Professional widescreen documentary editing with cinematic color grading',
-    description:
-      'Full narrative assembly and look development in Premiere Pro and DaVinci Resolve—blending talking-head interviews, 3D parallax archival stills, atmospheric sound design, and -14 LUFS mastering.',
-    thumbnail: heroEditingSuiteImg,
-    videoSrc: 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
-    aspect: '16:9',
-    featuredSpan: false,
-    duration: '01:15',
-    fps: '24 fps',
-    resolution: '3840x2160 4K',
-    avgRetention: '89.6%',
-    hookRate: '84.2%',
-    softwareUsed: 'DaVinci Resolve · Premiere Pro · Audition',
-    defaultYoutubeUrl: 'https://youtube.com/@deerghhadiyal',
-    colorFilterRaw: 'saturate(0.45) contrast(0.80) brightness(0.92)',
-    colorFilterGraded: 'saturate(1.25) contrast(1.18) brightness(1.04)',
-    timelineMarkers: [
-      {
-        time: 'Act 01',
-        label: 'Cold Open Mystery Hook',
-        detail: 'Tense documentary sound bed with talking-head voiceover and 3D archival camera push.',
-      },
-      {
-        time: 'Act 02',
-        label: 'CST & Filmic Split-Tone',
-        detail: 'Color Space Transform from Log to Rec.709 with warm skin tones and rich shadow contrast.',
-      },
-      {
-        time: 'Mix Bus',
-        label: 'Spatial Foley & Dialogue Clarity',
-        detail: 'Multiband compression, EQ carving at 3kHz for vocal presence, and custom room tone.',
-      },
-    ],
-  },
-];
+const importedShowcaseFiles = [
+  ['game scene.mp4', 'Game Scene'],
+  ["god's edit.mp4", "God's Edit"],
+  ['KYT-10-Framer-Intro.mp4', 'KHUSHAL KSY Framer Intro'],
+  ['podcast edit sample (1).mp4', 'Podcast Edit Sample'],
+  ['SAMPLE 6(1).mp4', 'YT EDIT'],
+  ['Sequence 01_2.mp4', 'DOCUMENTARY EDIT WITH AI'],
+  ['solar system.mp4', 'Solar System'],
+] as const;
+
+const createImportedShowcaseItem = (
+  id: string,
+  title: string,
+  videoSrc: string,
+  aspect: VideoShowcaseItem['aspect']
+): VideoShowcaseItem => ({
+  id,
+  category: 'imported',
+  categoryLabel: `${aspect} Portfolio Video`,
+  title,
+  subtitle: `Imported ${aspect} portfolio video`,
+  description: 'Original video shown without cropping, in a muted looping preview.',
+  thumbnail: aspect === '9:16' ? reelTalkingHeadImg : heroEditingSuiteImg,
+  videoSrc,
+  aspect,
+  duration: 'Looping preview',
+  fps: 'Original',
+  resolution: 'Original dimensions',
+  avgRetention: '—',
+  hookRate: '—',
+  softwareUsed: '—',
+  defaultYoutubeUrl: SOCIAL_LINKS.youtubeChannel,
+  colorFilterRaw: 'none',
+  colorFilterGraded: 'none',
+  fit: 'contain',
+  timelineMarkers: [
+    {
+      time: 'Full video',
+      label: 'Imported portfolio video',
+      detail: 'This preview plays the original video in a continuous muted loop.',
+    },
+  ],
+});
+
+const importedVideoShowcase: VideoShowcaseItem[] = importedShowcaseFiles.map(
+  ([fileName, title]) =>
+    createImportedShowcaseItem(
+      `imported-${fileName}`,
+      title,
+      `/videos/${encodeURIComponent(fileName)}`,
+      '16:9'
+    )
+);
+
+export const PORTFOLIO_REEL_SHOWCASE: VideoShowcaseItem[] = portfolioVideos.map((video) =>
+  createImportedShowcaseItem(video.showcaseId, video.title, video.src, '9:16')
+);
+
+export const VIDEO_SHOWCASE: VideoShowcaseItem[] = importedVideoShowcase;
 
 export const WORK_PROCESS: WorkProcessItem[] = [
   {

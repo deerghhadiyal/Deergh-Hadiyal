@@ -9,17 +9,16 @@ import {
   Sliders,
   Film,
   ArrowUpRight,
-  Printer,
   Eye,
   Volume2,
   VolumeX,
   Mail,
-  RotateCw,
 } from 'lucide-react';
-import HeroVideoCarousel, { CircularPortraitOrbit } from './components/HeroVideoCarousel';
+import HeroVideoCarousel from './components/HeroVideoCarousel';
 import CursorEnvironment from './components/CursorEnvironment';
 import {
   portfolioVideos,
+  PORTFOLIO_REEL_SHOWCASE,
   SOCIAL_LINKS,
   EXPERIENCE_PILLARS,
   SERVICES,
@@ -28,8 +27,9 @@ import {
   WORK_PROCESS,
   TECHNICAL_SKILLS,
   VideoShowcaseItem,
-  downloadPortfolioDossier,
 } from './data/portfolioData';
+
+const PORTFOLIO_PDF_URL = '/Deergh_Hadiyal_Video_Editor_Resume.pdf';
 
 function extractYouTubeEmbedUrl(input: string): string | null {
   const trimmed = input.trim();
@@ -97,10 +97,6 @@ function ResilientImage({ src, alt, className = '', style, fallbackLabel }: Resi
   );
 }
 export default function App() {
-  const [activeVideoFilter, setActiveVideoFilter] = useState<
-    'all' | 'hacks-edit' | 'car-speed' | 'sports-brand' | 'documentary'
-  >('all');
-  const [showcaseOrbitDirection, setShowcaseOrbitDirection] = useState<1 | -1>(1);
   const [showcaseHoveredCardId, setShowcaseHoveredCardId] = useState<string | null>(null);
   const [selectedVideo, setSelectedVideo] = useState<VideoShowcaseItem | null>(null);
   const [gradeSplit, setGradeSplit] = useState<number>(74);
@@ -113,7 +109,6 @@ export default function App() {
 
   // Portfolio Dossier Modal state
   const [isDossierOpen, setIsDossierOpen] = useState<boolean>(false);
-  const [dossierDownloaded, setDossierDownloaded] = useState<boolean>(false);
 
   // Interactive Project Estimator & Contact Copy state
   const [selectedServiceType, setSelectedServiceType] = useState<string>('Short-Form Editing');
@@ -178,7 +173,7 @@ export default function App() {
           { opacity: 1, transform: 'translate3d(0, 0, 0)' },
         ],
         {
-          duration: 1000,
+          duration: 3000,
           delay: Number(target.dataset.revealDelay) || 0,
           easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
         }
@@ -222,79 +217,12 @@ export default function App() {
     return () => window.clearInterval(interval);
   }, [selectedVideo, isPlayingPreview]);
 
-  const filteredVideos =
-    activeVideoFilter === 'all'
-      ? VIDEO_SHOWCASE
-      : VIDEO_SHOWCASE.filter((v) => v.category === activeVideoFilter);
-
-  useEffect(() => {
-    if (typeof IntersectionObserver === 'undefined') return;
-
-    const visibleVideos = new Set<HTMLVideoElement>();
-    let activeVideo: HTMLVideoElement | null = null;
-    const updateActiveVideo = () => {
-      const nextVideo =
-        Array.from(document.querySelectorAll<HTMLVideoElement>('[data-showcase-video]')).find(
-          (video) => visibleVideos.has(video)
-        ) ?? null;
-      if (nextVideo === activeVideo) return;
-
-      if (activeVideo) {
-        activeVideo.pause();
-        activeVideo.removeAttribute('src');
-        activeVideo.load();
-      }
-
-      activeVideo = nextVideo;
-      if (activeVideo) {
-        activeVideo.poster = activeVideo.dataset.poster || '';
-        activeVideo.src = activeVideo.dataset.src || '';
-        activeVideo.play().catch(() => {});
-      }
-    };
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          const video = entry.target as HTMLVideoElement;
-          if (entry.isIntersecting) {
-            visibleVideos.add(video);
-          } else {
-            visibleVideos.delete(video);
-          }
-        });
-        updateActiveVideo();
-      },
-      { threshold: 0.1 }
-    );
-
-    document.querySelectorAll<HTMLVideoElement>('[data-showcase-video]').forEach((video) => {
-      observer.observe(video);
-    });
-
-    return () => {
-      observer.disconnect();
-      visibleVideos.clear();
-      if (activeVideo) {
-        activeVideo.pause();
-        activeVideo.removeAttribute('src');
-        activeVideo.load();
-      }
-    };
-  }, [activeVideoFilter, customEmbeds]);
-
   const handleCopyText = (key: string, text: string) => {
     navigator.clipboard?.writeText(text);
     setCopiedKey(key);
     window.setTimeout(() => {
       setCopiedKey((prev) => (prev === key ? null : prev));
     }, 2200);
-  };
-
-  const handleTriggerDossierDownload = () => {
-    downloadPortfolioDossier();
-    setDossierDownloaded(true);
-    window.setTimeout(() => setDossierDownloaded(false), 3000);
   };
 
   const handleApplyCustomEmbed = (videoId: string) => {
@@ -316,7 +244,9 @@ export default function App() {
   };
 
   const handleOpenCarouselProject = (showcaseId: string) => {
-    const found = VIDEO_SHOWCASE.find((v) => v.id === showcaseId) || VIDEO_SHOWCASE[0];
+    const found =
+      PORTFOLIO_REEL_SHOWCASE.find((video) => video.id === showcaseId) || VIDEO_SHOWCASE[0];
+    if (!found) return;
     setSelectedVideo(found);
     setActiveMarkerIdx(0);
   };
@@ -580,23 +510,14 @@ ${clientName ? `• Name: ${clientName}\n` : ''}${clientChannel ? `• Channel /
               </p>
 
               <div className="flex flex-wrap items-center justify-center gap-4">
-                <button
-                  type="button"
-                  onClick={handleTriggerDossierDownload}
+                <a
+                  href={PORTFOLIO_PDF_URL}
+                  download="Deergh_Hadiyal_Video_Editor_Resume.pdf"
                   className="px-6 py-3.5 text-sm font-semibold bg-[#E4AE58] hover:bg-[#C9BFAF] text-[#151311] rounded-lg transition-colors inline-flex items-center gap-2 whitespace-nowrap cursor-pointer"
                 >
-                  {dossierDownloaded ? (
-                    <>
-                      <Check className="w-4 h-4" />
-                      <span>Portfolio Downloaded</span>
-                    </>
-                  ) : (
-                    <>
-                      <Download className="w-4 h-4" />
-                      <span>Download PDF Portfolio</span>
-                    </>
-                  )}
-                </button>
+                  <Download className="w-4 h-4" />
+                  <span>Download PDF Portfolio</span>
+                </a>
 
                 <button
                   type="button"
@@ -613,7 +534,7 @@ ${clientName ? `• Name: ${clientName}\n` : ''}${clientChannel ? `• Channel /
 
         <div className="section-divider-glow" aria-hidden="true" />
 
-        {/* Video Showcase Section (#videos) — Upgraded to 9:16 Portrait Circular Orbit + 9:16 Portrait Showcase Cards */}
+        {/* Video Showcase Section (#videos) — Real Portfolio Reels and Widescreen Videos */}
         <section
           id="videos"
           className="py-20 px-6 relative overflow-hidden"
@@ -628,72 +549,21 @@ ${clientName ? `• Name: ${clientName}\n` : ''}${clientChannel ? `• Channel /
             <div className="flex flex-col lg:flex-row lg:items-end justify-between mb-8 gap-6">
               <div className="max-w-2xl">
                 <p className="text-xs font-mono-tabular uppercase tracking-widest text-[#E4AE58] mb-2">
-                  9:16 Vertical Showreel &amp; Interactive Orbit
+                  Portfolio Video Showcase
                 </p>
                 <h2 className="font-display text-3xl sm:text-4xl font-bold text-[#F2EEE6]">
                   Video Showcase
                 </h2>
                 <p className="text-sm sm:text-base text-[#C9BFAF] mt-3 leading-relaxed">
-                  Explore my 9:16 portrait edits from the{' '}
-                  <span className="text-[#F2EEE6] font-medium">HACKS EDIT</span> channel, Talking Head
-                  reels, Speed Ramp Car Edits, Sports Brand Pages, and Vertical Documentaries.
-                  Hover over any orbiting 9:16 card to smoothly zoom in (1.22x) while the circular
-                  motion continues.
+                  All imported videos autoplay silently and loop continuously: portrait reels in
+                  the orbit above and widescreen videos in the showcase below.
                 </p>
               </div>
-
-              {/* Orbit Direction & Category Filter Controls */}
-              <div className="flex flex-wrap items-center gap-2 self-start">
-                <button
-                  type="button"
-                  onClick={() => setShowcaseOrbitDirection((d) => (d === 1 ? -1 : 1))}
-                  className="px-3.5 py-2 text-xs font-mono-tabular font-medium bg-[#151311] hover:bg-[#332D26] text-[#F2EEE6] hover:text-[#F2EEE6] border border-[#E4AE58]/10 hover:border-[#E4AE58]/50 rounded-xl inline-flex items-center gap-1.5 transition-colors cursor-pointer"
-                >
-                  <RotateCw className="w-3.5 h-3.5 text-[#E4AE58]" />
-                  <span>Reverse Orbit</span>
-                </button>
-
-                <div className="flex flex-wrap items-center gap-1 p-1 bg-[#151311] border border-[#E4AE58]/10 rounded-xl">
-                  {(
-                    [
-                      { id: 'all', label: 'All 9:16 Reels' },
-                      { id: 'hacks-edit', label: 'HACKS EDIT & Talking Head' },
-                      { id: 'car-speed', label: 'Car Edit & Speed Ramp' },
-                      { id: 'sports-brand', label: 'Sports Brand' },
-                      { id: 'documentary', label: 'Documentary' },
-                    ] as const
-                  ).map((tab) => (
-                    <button
-                      key={tab.id}
-                      type="button"
-                      onClick={() => setActiveVideoFilter(tab.id)}
-                      className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors duration-400 whitespace-nowrap cursor-pointer ${
-                        activeVideoFilter === tab.id
-                          ? 'bg-[#E4AE58] text-[#151311] font-semibold'
-                          : 'text-[#C9BFAF] hover:text-[#F2EEE6]'
-                      }`}
-                    >
-                      {tab.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Interactive 3D Circular Orbiting 9:16 Portrait Stage inside #videos */}
-            <div className="mb-16">
-              <CircularPortraitOrbit
-                videos={portfolioVideos}
-                onSelectProject={handleOpenCarouselProject}
-                orbitSpeed={0.2}
-                direction={showcaseOrbitDirection}
-                compact
-              />
             </div>
 
             {/* 2-Column 16:9 Widescreen Detailed Breakdown Cards */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {filteredVideos.map((video) => {
+              {VIDEO_SHOWCASE.map((video) => {
                 const activeEmbedUrl = customEmbeds[video.id];
                 const isCardHovered = showcaseHoveredCardId === video.id;
                 const isCardDimmed =
@@ -748,14 +618,20 @@ ${clientName ? `• Name: ${clientName}\n` : ''}${clientChannel ? `• Channel /
                           className="w-full h-full relative cursor-pointer"
                         >
                           <video
-                            data-showcase-video
-                            data-src={video.videoSrc}
-                            data-poster={video.thumbnail}
+                            src={video.videoSrc}
+                            poster={video.thumbnail}
+                            autoPlay
                             muted
                             loop
                             playsInline
-                            preload="none"
-                            className="w-full h-full object-cover transition-transform duration-600 group-hover:scale-[1.06]"
+                            preload="auto"
+                            onPause={(event) => {
+                              const pausedVideo = event.currentTarget;
+                              if (!pausedVideo.ended) pausedVideo.play().catch(() => {});
+                            }}
+                            className={`w-full h-full ${
+                              video.fit === 'contain' ? 'object-contain' : 'object-cover'
+                            } transition-transform duration-600 group-hover:scale-[1.06]`}
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-[#151311]/90 via-[#151311]/25 to-[#151311]/30" />
 
@@ -765,7 +641,7 @@ ${clientName ? `• Name: ${clientName}\n` : ''}${clientChannel ? `• Channel /
                               {video.categoryLabel}
                             </span>
                             <span className="bg-[#E4AE58] text-[#151311] font-bold px-2.5 py-0.5 rounded-full">
-                              16:9
+                              {video.aspect}
                             </span>
                           </div>
 
@@ -776,13 +652,9 @@ ${clientName ? `• Name: ${clientName}\n` : ''}${clientChannel ? `• Channel /
                             </div>
                           </div>
 
-                          {/* Bottom Hook & Retention Metrics Inside 16:9 Frame */}
-                          <div className="absolute bottom-3.5 left-4 right-4 flex items-center justify-between text-xs font-mono-tabular text-[#C9BFAF]">
+                          <div className="absolute bottom-3.5 left-4 right-4 text-xs font-mono-tabular text-[#C9BFAF]">
                             <span className="bg-[#151311]/60 backdrop-blur-sm px-2.5 py-1 rounded border border-[#E4AE58]/10">
-                              3s Hook: {video.hookRate}
-                            </span>
-                            <span className="bg-[#151311]/60 backdrop-blur-sm px-2.5 py-1 rounded border border-[#E4AE58]/10">
-                              Retention: {video.avgRetention}
+                              Muted looping preview
                             </span>
                           </div>
                         </div>
@@ -1298,7 +1170,7 @@ ${clientName ? `• Name: ${clientName}\n` : ''}${clientChannel ? `• Channel /
             <div className="px-6 py-4 border-b border-[#E4AE58]/10 flex items-center justify-between gap-4 bg-[#151311]">
               <div className="min-w-0">
                 <div className="text-xs font-mono-tabular text-[#E4AE58]">
-                  {selectedVideo.categoryLabel} · 16:9 Widescreen · {selectedVideo.fps}
+                  {selectedVideo.categoryLabel} · {selectedVideo.fps}
                 </div>
                 <h3 className="font-display text-lg sm:text-xl font-bold text-[#F2EEE6] truncate">
                   {selectedVideo.title}
@@ -1318,8 +1190,14 @@ ${clientName ? `• Name: ${clientName}\n` : ''}${clientChannel ? `• Channel /
               {/* Left 7 Cols: 16:9 Widescreen Player */}
               <div className="lg:col-span-7 bg-[#151311] flex flex-col items-center justify-center p-5">
                 <div
-                  style={{ aspectRatio: '16 / 9' }}
-                  className="relative w-full aspect-video rounded-[18px] overflow-hidden border border-[#E4AE58]/15 shadow-2xl bg-[#151311]"
+                  style={{
+                    aspectRatio: selectedVideo.aspect === '9:16' ? '9 / 16' : '16 / 9',
+                  }}
+                  className={`relative ${
+                    selectedVideo.aspect === '9:16'
+                      ? 'h-[min(70vh,780px)] w-auto max-w-full'
+                      : 'w-full aspect-video'
+                  } rounded-[18px] overflow-hidden border border-[#E4AE58]/15 shadow-2xl bg-[#151311]`}
                 >
                   {customEmbeds[selectedVideo.id] ? (
                     <iframe
@@ -1338,13 +1216,15 @@ ${clientName ? `• Name: ${clientName}\n` : ''}${clientChannel ? `• Channel /
                         muted={isMutedPreview}
                         loop
                         playsInline
-                        className="w-full h-full object-cover"
+                        className={`w-full h-full ${
+                          selectedVideo.fit === 'contain' ? 'object-contain' : 'object-cover'
+                        }`}
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-[#151311]/85 via-transparent to-[#151311]/30 pointer-events-none" />
 
                       <div className="absolute top-3 left-3 right-3 flex items-center justify-between text-[11px] font-mono-tabular text-[#F2EEE6]">
                         <span className="bg-[#151311]/75 px-2.5 py-1 rounded-full border border-[#E4AE58]/10">
-                          16:9 MASTER
+                          {selectedVideo.aspect} MASTER
                         </span>
                         <button
                           type="button"
@@ -1379,11 +1259,10 @@ ${clientName ? `• Name: ${clientName}\n` : ''}${clientChannel ? `• Channel /
                 <div className="space-y-4">
                   <div>
                     <div className="text-xs font-mono-tabular text-[#E4AE58] mb-1">
-                      Frame-Accurate 16:9 Anatomy · Hook: {selectedVideo.hookRate} · Retention:{' '}
-                      {selectedVideo.avgRetention}
+                      {selectedVideo.aspect} portfolio video · Muted looping preview
                     </div>
                     <h4 className="font-display text-lg font-bold text-[#F2EEE6]">
-                      Retention Timeline Markers
+                      Video Details
                     </h4>
                   </div>
 
@@ -1473,36 +1352,37 @@ ${clientName ? `• Name: ${clientName}\n` : ''}${clientChannel ? `• Channel /
         </div>
       )}
 
-      {/* Printable / Downloadable Portfolio Dossier Preview Modal */}
+      {/* Original PDF Preview Modal */}
       {isDossierOpen && (
         <div
           className="fixed inset-0 z-50 bg-[#151311]/90 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 overflow-y-auto"
           role="dialog"
           aria-modal="true"
-          aria-label="Deergh Hadiyal Portfolio Dossier"
+          aria-label="Deergh Hadiyal PDF Portfolio Preview"
         >
-          <div className="w-full max-w-[860px] bg-[#151311] border border-[#E4AE58]/15 rounded-2xl overflow-hidden shadow-2xl my-auto">
+          <div className="w-full max-w-[1100px] bg-[#151311] border border-[#E4AE58]/15 rounded-2xl overflow-hidden shadow-2xl my-auto">
             <div className="px-6 py-4 bg-[#151311] border-b border-[#E4AE58]/10 flex items-center justify-between gap-4 no-print">
               <div className="text-xs font-mono-tabular text-[#E4AE58]">
-                DEERGH_HADIYAL_PORTFOLIO.PDF · PRINT &amp; DOWNLOAD VIEW
+                DEERGH_HADIYAL_VIDEO_EDITOR_RESUME.PDF · ORIGINAL PDF
               </div>
               <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => window.print()}
+                <a
+                  href={PORTFOLIO_PDF_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="px-3.5 py-1.5 text-xs font-semibold bg-[#F2EEE6]/10 hover:bg-[#F2EEE6]/20 text-[#F2EEE6] rounded-lg inline-flex items-center gap-1.5 cursor-pointer"
                 >
-                  <Printer className="w-3.5 h-3.5" />
-                  <span>Print / Save as PDF</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={handleTriggerDossierDownload}
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  <span>Open PDF</span>
+                </a>
+                <a
+                  href={PORTFOLIO_PDF_URL}
+                  download="Deergh_Hadiyal_Video_Editor_Resume.pdf"
                   className="px-3.5 py-1.5 text-xs font-semibold bg-[#E4AE58] hover:bg-[#C9BFAF] text-[#151311] rounded-lg inline-flex items-center gap-1.5 cursor-pointer"
                 >
                   <Download className="w-3.5 h-3.5" />
-                  <span>Download File</span>
-                </button>
+                  <span>Download PDF</span>
+                </a>
                 <button
                   type="button"
                   onClick={() => setIsDossierOpen(false)}
@@ -1514,70 +1394,11 @@ ${clientName ? `• Name: ${clientName}\n` : ''}${clientChannel ? `• Channel /
               </div>
             </div>
 
-            <div className="p-8 sm:p-10 space-y-8 max-h-[80vh] overflow-y-auto">
-              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b border-[#E4AE58]/10 pb-6">
-                <div>
-                  <h2 className="font-display text-3xl font-bold text-[#F2EEE6]">DEERGH HADIYAL</h2>
-                  <p className="text-base text-[#E4AE58] font-semibold mt-1">
-                    Video Editor &amp; Content Creator
-                  </p>
-                </div>
-                <div className="text-xs font-mono-tabular text-[#C9BFAF] space-y-1 sm:text-right">
-                  <div>Email: {SOCIAL_LINKS.email}</div>
-                  <div>YouTube: youtube.com/@deerghhadiyal</div>
-                  <div>Instagram: instagram.com/deergh_hadiyal</div>
-                </div>
-              </div>
-
-              <div>
-                <h3 className="text-xs font-mono-tabular uppercase tracking-wider text-[#E4AE58] mb-2">
-                  Executive Summary
-                </h3>
-                <p className="text-sm text-[#F2EEE6] leading-relaxed">
-                  Professional video editor specializing in 9:16 Talking Head edits, Documentary
-                  storytelling, Speed Ramp car edits, CapCut &amp; After Effects hybrid workflows,
-                  and high-performing Sports Brand Pages / HACKS EDIT viral content.
-                </p>
-              </div>
-
-              <div>
-                <h3 className="text-xs font-mono-tabular uppercase tracking-wider text-[#E4AE58] mb-3">
-                  Core Services
-                </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {SERVICES.map((s) => (
-                    <div
-                      key={s.index}
-                      className="p-4 rounded-xl bg-[#332D26] border border-[#E4AE58]/10"
-                    >
-                      <div className="text-sm font-bold text-[#F2EEE6] mb-1">
-                        {s.index}. {s.title}
-                      </div>
-                      <p className="text-xs text-[#C9BFAF] mb-2">{s.description}</p>
-                      <div className="text-[11px] font-mono-tabular text-[#C9BFAF]">
-                        {s.deliverables}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="border-t border-[#E4AE58]/10 pt-6 text-xs text-[#C9BFAF] space-y-2">
-                <div>
-                  <strong className="text-[#E4AE58]">Software:</strong> Adobe Premiere Pro · DaVinci
-                  Resolve · After Effects · CapCut Pro · Adobe Audition
-                </div>
-                <div>
-                  <strong className="text-[#E4AE58]">Specializations:</strong> Talking Head ·
-                  Documentary · Speed Ramp · Car Edit · HACKS EDIT &amp; Sports Brand Page ·
-                  Short-Form Video (9:16) · Motion Graphics · Color Grading
-                </div>
-                <div>
-                  <strong className="text-[#E4AE58]">Platforms:</strong> YouTube · Instagram ·
-                  TikTok · Snapchat · Twitter · LinkedIn
-                </div>
-              </div>
-            </div>
+            <iframe
+              src={PORTFOLIO_PDF_URL}
+              title="Original Deergh Hadiyal video editor resume PDF"
+              className="block h-[78vh] w-full border-0 bg-white"
+            />
           </div>
         </div>
       )}
