@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Play,
   Download,
   ExternalLink,
   Copy,
   Check,
   X,
-  Sliders,
   Film,
   ArrowUpRight,
   Eye,
@@ -14,7 +12,7 @@ import {
   VolumeX,
   Mail,
 } from 'lucide-react';
-import HeroVideoCarousel from './components/HeroVideoCarousel';
+import HeroVideoCarousel, { CircularPortraitOrbit } from './components/HeroVideoCarousel';
 import CursorEnvironment from './components/CursorEnvironment';
 import {
   portfolioVideos,
@@ -30,6 +28,15 @@ import {
 } from './data/portfolioData';
 
 const PORTFOLIO_PDF_URL = '/Deergh_Hadiyal_Video_Editor_Resume.pdf';
+const showcaseCarouselVideos = VIDEO_SHOWCASE.map((video, index) => ({
+  id: index + 1,
+  title: video.title,
+  category: video.categoryLabel,
+  src: video.videoSrc,
+  poster: video.thumbnail,
+  showcaseId: video.id,
+  fit: 'contain' as const,
+}));
 
 function extractYouTubeEmbedUrl(input: string): string | null {
   const trimmed = input.trim();
@@ -97,7 +104,6 @@ function ResilientImage({ src, alt, className = '', style, fallbackLabel }: Resi
   );
 }
 export default function App() {
-  const [showcaseHoveredCardId, setShowcaseHoveredCardId] = useState<string | null>(null);
   const [selectedVideo, setSelectedVideo] = useState<VideoShowcaseItem | null>(null);
   const [gradeSplit, setGradeSplit] = useState<number>(74);
   const [activeMarkerIdx, setActiveMarkerIdx] = useState<number>(0);
@@ -555,138 +561,24 @@ ${clientName ? `• Name: ${clientName}\n` : ''}${clientChannel ? `• Channel /
                   Video Showcase
                 </h2>
                 <p className="text-sm sm:text-base text-[#C9BFAF] mt-3 leading-relaxed">
-                  All imported videos autoplay silently and loop continuously: portrait reels in
-                  the orbit above and widescreen videos in the showcase below.
+                  Every edit rotates around a 3D ring in a 16:9 frame. Original video framing is
+                  preserved in every card.
                 </p>
               </div>
             </div>
 
-            {/* 2-Column 16:9 Widescreen Detailed Breakdown Cards */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {VIDEO_SHOWCASE.map((video) => {
-                const activeEmbedUrl = customEmbeds[video.id];
-                const isCardHovered = showcaseHoveredCardId === video.id;
-                const isCardDimmed =
-                  showcaseHoveredCardId !== null && showcaseHoveredCardId !== video.id;
-
-                return (
-                  <article
-                    key={video.id}
-                    onMouseEnter={() => setShowcaseHoveredCardId(video.id)}
-                    onMouseLeave={() =>
-                      setShowcaseHoveredCardId((prev) => (prev === video.id ? null : prev))
-                    }
-                    style={{
-                      transform: isCardHovered
-                        ? 'scale3d(1.03, 1.03, 1) translate3d(0, -4px, 0)'
-                        : 'scale3d(1, 1, 1)',
-                      transition:
-                        'transform 420ms cubic-bezier(0.22, 1, 0.36, 1), opacity 350ms ease, filter 350ms ease, border-color 350ms ease',
-                      opacity: isCardDimmed ? 0.65 : 1,
-                      zIndex: isCardHovered ? 30 : 1,
-                    }}
-                    className="group relative rounded-[22px] overflow-hidden bg-[#332D26] border border-[#E4AE58]/[0.09] hover:border-[#E4AE58]/60 shadow-[0_20px_50px_-15px_rgba(21, 19, 17,0.85)] flex flex-col justify-between"
-                  >
-                    {/* 16:9 Widescreen Video Container */}
-                    <div
-                      style={{ aspectRatio: '16 / 9' }}
-                      className="relative w-full aspect-video bg-[#151311] overflow-hidden"
-                    >
-                      {activeEmbedUrl ? (
-                        <iframe
-                          src={activeEmbedUrl}
-                          title={video.title}
-                          className="w-full h-full border-0"
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                          allowFullScreen
-                        />
-                      ) : (
-                        <div
-                          onClick={() => {
-                            setSelectedVideo(video);
-                            setActiveMarkerIdx(0);
-                          }}
-                          role="button"
-                          tabIndex={0}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                              e.preventDefault();
-                              setSelectedVideo(video);
-                              setActiveMarkerIdx(0);
-                            }
-                          }}
-                          className="w-full h-full relative cursor-pointer"
-                        >
-                          <video
-                            src={video.videoSrc}
-                            poster={video.thumbnail}
-                            autoPlay
-                            muted
-                            loop
-                            playsInline
-                            preload="auto"
-                            onPause={(event) => {
-                              const pausedVideo = event.currentTarget;
-                              if (!pausedVideo.ended) pausedVideo.play().catch(() => {});
-                            }}
-                            className={`w-full h-full ${
-                              video.fit === 'contain' ? 'object-contain' : 'object-cover'
-                            } transition-transform duration-600 group-hover:scale-[1.06]`}
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-t from-[#151311]/90 via-[#151311]/25 to-[#151311]/30" />
-
-                          {/* Top 16:9 Metadata Badge */}
-                          <div className="absolute top-3.5 left-4 right-4 flex items-center justify-between text-[11px] font-mono-tabular text-[#F2EEE6]/90">
-                            <span className="bg-[#151311]/65 backdrop-blur-md px-3 py-1 rounded-full border border-[#E4AE58]/15 truncate max-w-[75%]">
-                              {video.categoryLabel}
-                            </span>
-                            <span className="bg-[#E4AE58] text-[#151311] font-bold px-2.5 py-0.5 rounded-full">
-                              {video.aspect}
-                            </span>
-                          </div>
-
-                          {/* Center Play / Inspect Button */}
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="w-14 h-14 rounded-full bg-[#E4AE58]/95 text-[#151311] flex items-center justify-center shadow-lg transition-transform duration-400 group-hover:scale-110">
-                              <Play className="w-6 h-6 fill-[#151311] ml-0.5" />
-                            </div>
-                          </div>
-
-                          <div className="absolute bottom-3.5 left-4 right-4 text-xs font-mono-tabular text-[#C9BFAF]">
-                            <span className="bg-[#151311]/60 backdrop-blur-sm px-2.5 py-1 rounded border border-[#E4AE58]/10">
-                              Muted looping preview
-                            </span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Card Details Body Below 16:9 Player */}
-                    <div
-                      onClick={() => {
-                        setSelectedVideo(video);
-                        setActiveMarkerIdx(0);
-                      }}
-                      className="p-6 space-y-2.5 cursor-pointer"
-                    >
-                      <h3 className="font-display text-lg sm:text-xl font-bold text-[#F2EEE6] leading-snug group-hover:text-[#C9BFAF] transition-colors">
-                        {video.title}
-                      </h3>
-                      <p className="text-xs sm:text-sm text-[#C9BFAF] leading-relaxed">
-                        {video.description}
-                      </p>
-                      <div className="pt-3 border-t border-[#E4AE58]/[0.08] flex items-center justify-between text-xs font-semibold text-[#E4AE58]">
-                        <span className="inline-flex items-center gap-1.5">
-                          <Sliders className="w-3.5 h-3.5" />
-                          <span>Inspect Cut Breakdown</span>
-                        </span>
-                        <span className="font-mono-tabular text-[#F2EEE6]">{video.duration}</span>
-                      </div>
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
+            <CircularPortraitOrbit
+              videos={showcaseCarouselVideos}
+              aspectRatio="16:9"
+              mode="ring"
+              onSelectProject={(showcaseId) => {
+                const video = VIDEO_SHOWCASE.find((item) => item.id === showcaseId);
+                if (video) {
+                  setSelectedVideo(video);
+                  setActiveMarkerIdx(0);
+                }
+              }}
+            />
 
             {/* Channel CTA Footer */}
             <div className="mt-12 pt-8 border-t border-[#E4AE58]/[0.08] flex flex-col sm:flex-row items-center justify-between gap-4">

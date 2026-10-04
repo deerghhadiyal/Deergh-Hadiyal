@@ -8,30 +8,64 @@ interface CircularPortraitOrbitProps {
   orbitSpeed?: number; // cards per second
   direction?: 1 | -1;
   compact?: boolean;
+  aspectRatio?: '9:16' | '16:9';
+  mode?: 'arc' | 'ring';
 }
 
-/** Muted looping player for every reel in the portrait orbit. */
-function PortraitVideoPlayer({ video }: { video: PortfolioCarouselVideo }) {
+function PortraitVideoPlayer({
+  video,
+  isPlaying,
+  isZoomed,
+}: {
+  video: PortfolioCarouselVideo;
+  isPlaying: boolean;
+  isZoomed: boolean;
+}) {
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+
+  useEffect(() => {
+    const player = videoRef.current;
+    if (!player) return;
+
+    if (!isPlaying) {
+      player.pause();
+      return;
+    }
+
+    void player.play().catch((error: unknown) => {
+      if (!(error instanceof DOMException && error.name === 'AbortError')) {
+        console.warn(`Unable to play portfolio video "${player.currentSrc}".`, error);
+      }
+    });
+  }, [isPlaying, video.src]);
+
   return (
     <video
+      ref={videoRef}
       src={video.src}
       poster={video.poster || undefined}
-      autoPlay
       muted
       loop
       playsInline
-      preload="auto"
-      className="w-full h-full object-cover pointer-events-none select-none"
+      preload={isPlaying ? 'auto' : 'metadata'}
+      style={{
+        transform: isZoomed ? 'scale(1.12)' : 'scale(1)',
+        transition: 'transform 650ms cubic-bezier(0.22, 1, 0.36, 1)',
+        transformOrigin: 'center',
+      }}
+      className={`w-full h-full ${
+        video.fit === 'contain' ? 'object-contain' : 'object-cover'
+      } pointer-events-none select-none`}
     />
   );
 }
 
 /**
- * Continuous 3D Circular / Orbiting 9:16 Portrait Video Cards Stage.
- * - Strictly preserves 9:16 portrait aspect ratio on all cards at all times.
+ * Continuous 3D circular video-card orbit, used with portrait and landscape cards.
+ * - Preserves the selected card aspect ratio without changing the video source.
  * - Continuously orbits around the center via GPU-accelerated 3D transforms in requestAnimationFrame.
- * - Hovering any card smoothly zooms it in (1.22x scale) and brings it to the foreground
- *   WITHOUT stopping the overall circular orbit animation.
+ * - Hovering a portrait card smoothly zooms both the card and its video without
+ *   stopping the overall circular orbit animation.
  * - Supports mobile/tablet tap interaction.
  */
 export function CircularPortraitOrbit({
@@ -40,19 +74,24 @@ export function CircularPortraitOrbit({
   orbitSpeed = 0.22,
   direction = 1,
   compact = false,
+  aspectRatio = '9:16',
+  mode = 'arc',
 }: CircularPortraitOrbitProps) {
   const total = videos.length;
+  const isPortrait = aspectRatio === '9:16';
+  const isRing = mode === 'ring';
   const [hoveredId, setHoveredId] = useState<number | null>(null);
   const [tappedId, setTappedId] = useState<number | null>(null);
   const [isVisibleInViewport, setIsVisibleInViewport] = useState<boolean>(false);
-  const initialCenterIndex = Math.floor(total / 2);
+  const initialCenterIndex = Math.floor(total / 2) % total;
   const [autoPlayId, setAutoPlayId] = useState<number | null>(
     () => videos[initialCenterIndex]?.id ?? null
   );
   const stageRef = useRef<HTMLDivElement | null>(null);
   const cardOrbitRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const phaseRef = useRef<number>(0);
+  const phaseRef = useRef<number>(isRing ? 0 : total % 2 === 1 ? 0.5 : 0);
   const lastTimeRef = useRef<number | null>(null);
+  const orbitTrackRef = useRef<HTMLDivElement | null>(null);
   const hoveredIdRef = useRef<number | null>(null);
   const tappedIdRef = useRef<number | null>(null);
   const autoPlayIdRef = useRef<number | null>(videos[initialCenterIndex]?.id ?? null);
@@ -104,19 +143,56 @@ export function CircularPortraitOrbit({
 
       if (isVisibleInViewport && total > 0) {
         if (!motionPreference.matches) {
-          phaseRef.current = (phaseRef.current + dt * orbitSpeed * direction + total) % total;
+          const ringSpeed = isRing ? Math.min(orbitSpeed, 0.12) : orbitSpeed;
+          phaseRef.current = (phaseRef.current + dt * ringSpeed * direction + total) % total;
         }
 
         const stageWidth = stageRef.current?.clientWidth || 1200;
         const isSmallScreen = stageWidth < 640;
         const isMediumScreen = stageWidth >= 640 && stageWidth < 1024;
 
+        if (isRing) {
+          if (orbitTrackRef.current) {
+            orbitTrackRef.current.style.transform = `rotateY(${((phaseRef.current * 360) / total).toFixed(2)}deg)`;
+          }
+
+          const frontIndex = ((Math.round(initialCenterIndex - phaseRef.current) % total) + total) % total;
+          const centerVideoId = videos[frontIndex]?.id ?? null;
+          if (centerVideoId !== autoPlayIdRef.current) {
+            autoPlayIdRef.current = centerVideoId;
+            setAutoPlayId(centerVideoId);
+          }
+
+          const cardWidth = cardOrbitRefs.current[0]?.offsetWidth ?? Math.min(stageWidth * 0.82, 420);
+          const radius = cardWidth / (2 * Math.tan(Math.PI / total)) * 1.08;
+          const rotationDegrees = (phaseRef.current * 360) / total;
+
+          for (let i = 0; i < total; i++) {
+            const el = cardOrbitRefs.current[i];
+            if (!el) continue;
+
+            const angle = ((i - initialCenterIndex) * 360) / total;
+            const frontness = Math.cos(((angle + rotationDegrees) * Math.PI) / 180);
+            el.style.marginLeft = `${-el.offsetWidth / 2}px`;
+            el.style.marginTop = `${-el.offsetHeight / 2}px`;
+            el.style.transform = `rotateY(${angle.toFixed(2)}deg) translateZ(${radius.toFixed(2)}px)`;
+            el.style.opacity = String(Math.max(0.35, 0.7 + frontness * 0.3));
+            el.style.zIndex = String(Math.round(50 + frontness * 50));
+            el.style.pointerEvents = frontness < -0.45 ? 'none' : 'auto';
+          }
+        } else {
         // Horizontal spacing along the circular arc
-        const baseStepX = isSmallScreen
-          ? stageWidth * 0.34
-          : isMediumScreen
-            ? stageWidth * 0.19
-            : Math.min(stageWidth * 0.145, 192);
+        const baseStepX = isPortrait
+          ? isSmallScreen
+            ? stageWidth * 0.34
+            : isMediumScreen
+              ? stageWidth * 0.19
+              : Math.min(stageWidth * 0.145, 192)
+          : isSmallScreen
+            ? stageWidth * 0.58
+            : isMediumScreen
+              ? stageWidth * 0.31
+              : Math.min(stageWidth * 0.29, 340);
 
         const halfN = total / 2;
         const centerIndex = Math.round(phaseRef.current + halfN) % total;
@@ -143,26 +219,46 @@ export function CircularPortraitOrbit({
 
           // Panoramic concave 3D circular/cylindrical curve matching the reference video:
           // Outer cards curve forward and angle inward; center cards form the deep focal curve
-          const x = u * baseStepX + Math.sign(u) * Math.pow(absU, 1.75) * (isSmallScreen ? 4 : 9);
-          const y = isSmallScreen
-            ? 10 - Math.pow(absU, 1.6) * 4
-            : 24 - Math.pow(absU, 1.75) * 6.2;
+          const x = isPortrait
+            ? u * baseStepX + Math.sign(u) * Math.pow(absU, 1.75) * (isSmallScreen ? 4 : 9)
+            : u * baseStepX + Math.sign(u) * Math.pow(absU, 1.65) * (isSmallScreen ? 3 : 7);
+          const y = isPortrait
+            ? isSmallScreen
+              ? 10 - Math.pow(absU, 1.6) * 4
+              : 24 - Math.pow(absU, 1.75) * 6.2
+            : 8 - Math.pow(absU, 1.6) * (isSmallScreen ? 5 : 8);
 
           // Base scale along the 3D circular amphitheater arc
-          const orbitScale = isSmallScreen
-            ? 0.84 + Math.pow(absU, 1.5) * 0.045
-            : 0.76 + Math.pow(absU, 1.78) * 0.048;
+          const orbitScale = isPortrait
+            ? isSmallScreen
+              ? 0.84 + Math.pow(absU, 1.5) * 0.045
+              : 0.76 + Math.pow(absU, 1.78) * 0.048
+            : Math.max(0.58, 1.12 - Math.pow(absU, 1.12) * 0.18);
 
           // Depth (translateZ) and inward perspective rotation (rotateY)
-          const z = isSmallScreen
-            ? -40 + Math.pow(absU, 1.6) * 14
-            : -95 + Math.pow(absU, 1.8) * 24;
+          const z = isPortrait
+            ? isSmallScreen
+              ? -40 + Math.pow(absU, 1.6) * 14
+              : -95 + Math.pow(absU, 1.8) * 24
+            : 85 - Math.pow(absU, 1.4) * (isSmallScreen ? 82 : 100);
 
           // When hovered/focused, gently flatten rotation slightly for crisp viewing while keeping orbit position
-          const rotateY = isFocused ? -u * 4.5 : -u * (isSmallScreen ? 8.5 : 10.8);
+          const rotateY = isPortrait
+            ? isFocused
+              ? -u * 4.5
+              : -u * (isSmallScreen ? 8.5 : 10.8)
+            : isFocused
+              ? -u * 3.5
+              : -u * (isSmallScreen ? 15 : 18);
 
           // Smooth wrap-around fade at the extreme outer boundaries of the circle
-          const maxVisibleU = isSmallScreen ? 2.2 : 3.55;
+          const maxVisibleU = isPortrait
+            ? isSmallScreen
+              ? 2.2
+              : 3.55
+            : isSmallScreen
+              ? 1.7
+              : 2.4;
           let edgeOpacity = 1;
           if (absU > maxVisibleU) {
             edgeOpacity = Math.max(0, 1 - (absU - maxVisibleU) / 0.45);
@@ -171,12 +267,15 @@ export function CircularPortraitOrbit({
           // Proper depth z-index: hovered card is always highest (200), otherwise outer foreground wings stack naturally
           const computedZIndex = isFocused
             ? 200
-            : Math.round(40 + absU * 12);
+            : isPortrait
+              ? Math.round(40 + absU * 12)
+              : Math.round(120 - absU * 20);
 
           el.style.transform = `translate3d(${x.toFixed(2)}px, ${y.toFixed(2)}px, ${z.toFixed(2)}px) rotateY(${rotateY.toFixed(2)}deg) scale3d(${orbitScale.toFixed(4)}, ${orbitScale.toFixed(4)}, 1)`;
           el.style.opacity = edgeOpacity.toFixed(3);
           el.style.zIndex = String(computedZIndex);
           el.style.pointerEvents = edgeOpacity < 0.15 ? 'none' : 'auto';
+        }
         }
       }
 
@@ -197,7 +296,7 @@ export function CircularPortraitOrbit({
       cancelAnimationFrame(rafId);
       motionPreference.removeEventListener('change', handleMotionPreferenceChange);
     };
-  }, [isVisibleInViewport, total, orbitSpeed, direction, videos]);
+  }, [isVisibleInViewport, total, orbitSpeed, direction, videos, isPortrait, isRing, initialCenterIndex]);
 
   return (
     <div
@@ -205,14 +304,49 @@ export function CircularPortraitOrbit({
       onClick={() => {
         if (tappedId !== null) setTappedId(null);
       }}
+      onMouseMove={(event) => {
+        let hoveredVideoIndex = -1;
+        let highestZIndex = Number.NEGATIVE_INFINITY;
+
+        cardOrbitRefs.current.forEach((card, index) => {
+          if (!card || card.style.pointerEvents === 'none') return;
+
+          const bounds = card.getBoundingClientRect();
+          if (
+            event.clientX < bounds.left ||
+            event.clientX > bounds.right ||
+            event.clientY < bounds.top ||
+            event.clientY > bounds.bottom
+          ) {
+            return;
+          }
+
+          const zIndex = Number(card.style.zIndex) || 0;
+          if (zIndex >= highestZIndex) {
+            highestZIndex = zIndex;
+            hoveredVideoIndex = index;
+          }
+        });
+
+        const nextHoveredId =
+          hoveredVideoIndex >= 0 ? videos[hoveredVideoIndex].id : null;
+        setHoveredId((current) => (current === nextHoveredId ? current : nextHoveredId));
+      }}
+      onMouseLeave={() => setHoveredId(null)}
       className={`relative w-full overflow-visible flex items-center justify-center perspective-stage select-none ${
-        compact
+        isRing
+          ? 'h-[360px] sm:h-[420px] lg:h-[480px]'
+          : compact
           ? 'h-[360px] sm:h-[430px] lg:h-[480px]'
           : 'h-[370px] sm:h-[450px] md:h-[500px] lg:h-[540px]'
       }`}
     >
       {/* 3D Orbiting Track */}
-      <div className="relative w-full h-full flex items-center justify-center preserve-3d">
+      <div
+        ref={orbitTrackRef}
+        className="relative w-full h-full flex items-center justify-center preserve-3d"
+        style={isRing ? { transform: 'rotateY(0deg)' } : undefined}
+      >
         {videos.map((video, index) => {
           const isFocused = activeFocusId === video.id;
           const isHovered = hoveredId === video.id || tappedId === video.id;
@@ -227,6 +361,17 @@ export function CircularPortraitOrbit({
               style={{
                 willChange: 'transform, opacity',
                 transformStyle: 'preserve-3d',
+                ...(isRing
+                  ? {
+                      left: '50%',
+                      top: '50%',
+                      backfaceVisibility: 'hidden' as const,
+                    }
+                  : {}),
+              }}
+              onMouseEnter={() => setHoveredId(video.id)}
+              onMouseLeave={() => {
+                setHoveredId((prev) => (prev === video.id ? null : prev));
               }}
               onClick={(e) => {
                 e.stopPropagation();
@@ -246,32 +391,30 @@ export function CircularPortraitOrbit({
               }}
               role="button"
               tabIndex={0}
-              aria-label={`${video.title} - ${video.category} (9:16 Portrait Video)`}
+              aria-label={`${video.title} - ${video.category} (${aspectRatio} video card)`}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault();
                   onSelectProject(video.showcaseId);
                 }
               }}
-              className="absolute w-[142px] sm:w-[172px] md:w-[196px] lg:w-[214px] aspect-[9/16] cursor-pointer"
+              className={`absolute cursor-pointer ${
+                isRing
+                  ? 'w-[82vw] max-w-[420px] aspect-video'
+                  : isPortrait
+                  ? 'w-[142px] sm:w-[172px] md:w-[196px] lg:w-[214px] aspect-[9/16]'
+                  : 'w-[82vw] max-w-[420px] aspect-video'
+              }`}
             >
-              {/* Inner 9:16 Portrait Card Zoom & Visual Focus Layer */}
+              {/* Inner card zoom and visual focus layer */}
               <div
-                onPointerEnter={(event) => {
-                  if (event.pointerType === 'mouse') setHoveredId(video.id);
-                }}
-                onPointerLeave={(event) => {
-                  if (event.pointerType === 'mouse') {
-                    setHoveredId((prev) => (prev === video.id ? null : prev));
-                  }
-                }}
                 style={{
-                  aspectRatio: '9 / 16',
+                  aspectRatio: isPortrait ? '9 / 16' : '16 / 9',
                   transform: isHovered
-                    ? 'scale3d(1.22, 1.22, 1) translate3d(0px, -10px, 45px)'
+                    ? `scale3d(${isPortrait ? 1.12 : 1.08}, ${isPortrait ? 1.12 : 1.08}, 1) translate3d(0px, -10px, 45px)`
                     : 'scale3d(1, 1, 1) translate3d(0px, 0px, 0px)',
                   transition:
-                    'transform 460ms cubic-bezier(0.22, 1, 0.36, 1), filter 380ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 460ms cubic-bezier(0.22, 1, 0.36, 1), border-color 350ms ease',
+                    'transform 650ms cubic-bezier(0.22, 1, 0.36, 1), filter 380ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 460ms cubic-bezier(0.22, 1, 0.36, 1), border-color 350ms ease',
                   filter: isDimmed
                     ? 'brightness(0.52) saturate(0.78)'
                     : isFocused
@@ -279,15 +422,17 @@ export function CircularPortraitOrbit({
                       : 'brightness(0.95)',
                   willChange: 'transform, filter',
                 }}
-                className={`relative w-full h-full aspect-[9/16] rounded-[22px] bg-[#151311] overflow-hidden ${
+                className={`relative w-full h-full rounded-[22px] bg-[#151311] overflow-hidden ${
                   isFocused
                     ? 'border border-[#E4AE58]/75 shadow-[0_32px_80px_-12px_rgba(21, 19, 17,0.95),0_0_45px_-8px_rgba(228, 174, 88,0.42)]'
                     : 'border border-[#E4AE58]/[0.13] shadow-[0_22px_50px_-14px_rgba(21, 19, 17,0.88)]'
                 }`}
               >
-                {/* Strictly 9:16 Portrait HTML5 Video with object-fit: cover */}
+                {/* Preserve source framing when the card ratio differs from the video. */}
                 <PortraitVideoPlayer
                   video={video}
+                  isPlaying={isVisibleInViewport}
+                  isZoomed={isPortrait && isHovered}
                 />
 
                 {/* Subtle Studio Specular Edge & Bottom Vignette */}
@@ -296,14 +441,14 @@ export function CircularPortraitOrbit({
                   className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[#F2EEE6]/[0.08] via-transparent to-[#151311]/80"
                 />
 
-                {/* Top Minimal 9:16 Pill Badge on Hover */}
+                {/* Top aspect-ratio badge on hover */}
                 <div
                   className={`pointer-events-none absolute top-3 left-3 right-3 flex items-center justify-between transition-opacity duration-400 ${
                     isFocused ? 'opacity-100' : 'opacity-0'
                   }`}
                 >
                   <span className="px-2 py-0.5 rounded-full bg-[#332D26] text-[#F2EEE6] text-[10px] font-mono-tabular font-bold">
-                    9:16
+                    {aspectRatio}
                   </span>
                 </div>
 
@@ -499,7 +644,7 @@ export default function HeroVideoCarousel({
           </div>
 
           <p className="text-[11px] font-mono-tabular text-[#C9BFAF]">
-            Hover any 9:16 portrait reel to zoom (1.22x) • Circular orbit continues seamlessly • Click to inspect cuts
+            Hover any 9:16 portrait reel for a smooth zoom • Circular orbit continues seamlessly • Click to inspect cuts
           </p>
         </div>
       </div>

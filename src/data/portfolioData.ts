@@ -8,6 +8,7 @@ export interface PortfolioCarouselVideo {
   src: string;
   poster: string;
   showcaseId: string;
+  fit?: 'cover' | 'contain';
 }
 
 /**
