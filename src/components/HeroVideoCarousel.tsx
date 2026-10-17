@@ -46,7 +46,11 @@ const PortraitVideoPlayer = memo(function PortraitVideoPlayer({
     };
     const handleLoadedMetadata = () => startPlayback();
 
-    player.addEventListener('loadedmetadata', handleLoadedMetadata, { once: true });
+    if (player.readyState >= HTMLMediaElement.HAVE_METADATA) {
+      startPlayback();
+    } else {
+      player.addEventListener('loadedmetadata', handleLoadedMetadata, { once: true });
+    }
 
     return () => {
       cancelled = true;
