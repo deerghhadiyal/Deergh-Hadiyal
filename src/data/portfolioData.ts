@@ -18,6 +18,9 @@ export interface PortfolioCarouselVideo {
 const encodeVideoAssetName = (fileName: string) =>
   encodeURIComponent(fileName).replace(/%2B/g, '+');
 
+const getVideoAssetUrl = (fileName: string) =>
+  `https://media.githubusercontent.com/media/deerghhadiyal/Deergh-Hadiyal/main/public/videos/${encodeVideoAssetName(fileName)}`;
+
 const portfolioVideoFiles = [
   ['WhatsApp Video 2026-09-13 at 2.11.00 PM.mp4', 'WhatsApp Reel', 'Creator Reel'],
   ['AE-Giveaway-PR.mp4', 'AE Giveaway PR', 'Brand Reel'],
@@ -59,7 +62,7 @@ export const portfolioVideos: PortfolioCarouselVideo[] = portfolioVideoFiles.map
     id: index + 1,
     title,
     category,
-    src: `/videos/${encodeVideoAssetName(fileName)}`,
+    src: getVideoAssetUrl(fileName),
     poster: `/videos/posters/${index + 1}.jpg`,
     showcaseId: `reel-${fileName}`,
   })
@@ -314,7 +317,7 @@ const importedVideoShowcase: VideoShowcaseItem[] = importedShowcaseFiles.map(
     createImportedShowcaseItem(
       `imported-${fileName}`,
       title,
-      `/videos/${encodeURIComponent(fileName)}`,
+      getVideoAssetUrl(fileName),
       '16:9',
       thumbnail ? `/videos/posters/${thumbnail}` : undefined
     )
