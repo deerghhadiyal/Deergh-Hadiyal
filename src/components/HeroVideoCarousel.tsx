@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { memo, useState, useEffect, useRef } from 'react';
 import { ArrowUpRight, Sparkles, Sliders, TrendingUp, Play } from 'lucide-react';
 import { PortfolioCarouselVideo } from '../data/portfolioData';
 
@@ -12,7 +12,7 @@ interface CircularPortraitOrbitProps {
   mode?: 'arc' | 'ring';
 }
 
-function PortraitVideoPlayer({
+const PortraitVideoPlayer = memo(function PortraitVideoPlayer({
   video,
   isPlaying,
   isZoomed,
@@ -22,50 +22,57 @@ function PortraitVideoPlayer({
   isZoomed: boolean;
 }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const playbackPositionRef = useRef(0);
 
   useEffect(() => {
     const player = videoRef.current;
     if (!player) return;
 
     if (!isPlaying) {
-      player.pause();
       return;
     }
 
     let cancelled = false;
-    const startFromBeginning = () => {
+    const startPlayback = () => {
       if (cancelled) return;
-      player.currentTime = 0;
+      if (playbackPositionRef.current > 0 && Number.isFinite(player.duration)) {
+        player.currentTime = Math.min(playbackPositionRef.current, player.duration);
+      }
       void player.play().catch((error: unknown) => {
         if (!(error instanceof DOMException && error.name === 'AbortError')) {
           console.warn(`Unable to play portfolio video "${player.currentSrc}".`, error);
         }
       });
     };
-    const handleLoadedMetadata = () => startFromBeginning();
+    const handleLoadedMetadata = () => startPlayback();
 
-    if (player.readyState >= HTMLMediaElement.HAVE_METADATA) {
-      startFromBeginning();
-    } else {
-      player.addEventListener('loadedmetadata', handleLoadedMetadata, { once: true });
-      player.load();
-    }
+    player.addEventListener('loadedmetadata', handleLoadedMetadata, { once: true });
+    player.src = video.src;
+    player.load();
 
     return () => {
       cancelled = true;
       player.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      if (Number.isFinite(player.currentTime)) {
+        playbackPositionRef.current = player.currentTime;
+      }
+      player.pause();
+      player.removeAttribute('src');
+      player.load();
     };
   }, [isPlaying, video.src]);
 
   return (
     <video
       ref={videoRef}
-      src={isPlaying ? video.src : undefined}
       poster={video.poster || undefined}
       muted
       loop
       playsInline
       preload={isPlaying ? 'metadata' : 'none'}
+      onTimeUpdate={(event) => {
+        playbackPositionRef.current = event.currentTarget.currentTime;
+      }}
       style={{
         transform: isZoomed ? 'scale(1.12)' : 'scale(1)',
         transition: 'transform 650ms cubic-bezier(0.22, 1, 0.36, 1)',
@@ -76,7 +83,7 @@ function PortraitVideoPlayer({
       } pointer-events-none select-none`}
     />
   );
-}
+});
 
 /**
  * Continuous 3D circular video-card orbit, used with portrait and landscape cards.
@@ -187,6 +194,7 @@ export function CircularPortraitOrbit({
             stageWidth * 1.15
           );
           const rotationDegrees = (phaseRef.current * 360) / total;
+          const cardHeight = cardOrbitRefs.current[0]?.offsetHeight ?? 0;
 
           for (let i = 0; i < total; i++) {
             const el = cardOrbitRefs.current[i];
@@ -194,9 +202,7 @@ export function CircularPortraitOrbit({
 
             const angle = ((i - initialCenterIndex) * 360) / total;
             const frontness = Math.cos(((angle + rotationDegrees) * Math.PI) / 180);
-            el.style.marginLeft = `${-el.offsetWidth / 2}px`;
-            el.style.marginTop = `${-el.offsetHeight / 2}px`;
-            el.style.transform = `rotateY(${angle.toFixed(2)}deg) translateZ(${radius.toFixed(2)}px)`;
+            el.style.transform = `translate(-50%, -${(cardHeight / 2).toFixed(2)}px) rotateY(${angle.toFixed(2)}deg) translateZ(${radius.toFixed(2)}px)`;
             el.style.opacity = String(Math.max(0.35, 0.7 + frontness * 0.3));
             el.style.zIndex = String(Math.round(50 + frontness * 50));
             el.style.pointerEvents = frontness < -0.45 ? 'none' : 'auto';
@@ -237,6 +243,21 @@ export function CircularPortraitOrbit({
           const rawDiff = ((i - phaseRef.current) % total + total) % total;
           const u = rawDiff - halfN;
           const absU = Math.abs(u);
+          const maxVisibleU = isPortrait
+            ? isSmallScreen
+              ? 2.2
+              : 3.55
+            : isSmallScreen
+              ? 1.7
+              : 2.4;
+
+          if (absU > maxVisibleU + 0.45) {
+            el.style.visibility = 'hidden';
+            el.style.opacity = '0';
+            el.style.pointerEvents = 'none';
+            continue;
+          }
+          el.style.visibility = 'visible';
 
           // Panoramic concave 3D circular/cylindrical curve matching the reference video:
           // Outer cards curve forward and angle inward; center cards form the deep focal curve
@@ -273,13 +294,6 @@ export function CircularPortraitOrbit({
               : -u * (isSmallScreen ? 15 : 18);
 
           // Smooth wrap-around fade at the extreme outer boundaries of the circle
-          const maxVisibleU = isPortrait
-            ? isSmallScreen
-              ? 2.2
-              : 3.55
-            : isSmallScreen
-              ? 1.7
-              : 2.4;
           let edgeOpacity = 1;
           if (absU > maxVisibleU) {
             edgeOpacity = Math.max(0, 1 - (absU - maxVisibleU) / 0.45);
@@ -352,7 +366,6 @@ export function CircularPortraitOrbit({
                 cardOrbitRefs.current[index] = node;
               }}
               style={{
-                willChange: 'transform, opacity',
                 transformStyle: 'preserve-3d',
                 ...(isRing
                   ? {
@@ -415,7 +428,7 @@ export function CircularPortraitOrbit({
                     : isFocused
                       ? 'brightness(1.06) contrast(1.05)'
                       : 'brightness(0.95)',
-                  willChange: 'transform, filter',
+                  willChange: isHovered ? 'transform, filter' : 'auto',
                 }}
                 className={`relative w-full h-full rounded-[22px] bg-[#151311] overflow-hidden ${
                   isFocused
