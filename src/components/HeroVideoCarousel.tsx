@@ -32,22 +32,40 @@ function PortraitVideoPlayer({
       return;
     }
 
-    void player.play().catch((error: unknown) => {
-      if (!(error instanceof DOMException && error.name === 'AbortError')) {
-        console.warn(`Unable to play portfolio video "${player.currentSrc}".`, error);
-      }
-    });
+    let cancelled = false;
+    const startFromBeginning = () => {
+      if (cancelled) return;
+      player.currentTime = 0;
+      void player.play().catch((error: unknown) => {
+        if (!(error instanceof DOMException && error.name === 'AbortError')) {
+          console.warn(`Unable to play portfolio video "${player.currentSrc}".`, error);
+        }
+      });
+    };
+    const handleLoadedMetadata = () => startFromBeginning();
+
+    if (player.readyState >= HTMLMediaElement.HAVE_METADATA) {
+      startFromBeginning();
+    } else {
+      player.addEventListener('loadedmetadata', handleLoadedMetadata, { once: true });
+      player.load();
+    }
+
+    return () => {
+      cancelled = true;
+      player.removeEventListener('loadedmetadata', handleLoadedMetadata);
+    };
   }, [isPlaying, video.src]);
 
   return (
     <video
       ref={videoRef}
-      src={video.src}
+      src={isPlaying ? video.src : undefined}
       poster={video.poster || undefined}
       muted
       loop
       playsInline
-      preload={isPlaying ? 'auto' : 'none'}
+      preload={isPlaying ? 'metadata' : 'none'}
       style={{
         transform: isZoomed ? 'scale(1.12)' : 'scale(1)',
         transition: 'transform 650ms cubic-bezier(0.22, 1, 0.36, 1)',
@@ -306,34 +324,6 @@ export function CircularPortraitOrbit({
       ref={stageRef}
       onClick={() => {
         if (tappedId !== null) setTappedId(null);
-      }}
-      onMouseMove={(event) => {
-        let hoveredVideoIndex = -1;
-        let highestZIndex = Number.NEGATIVE_INFINITY;
-
-        cardOrbitRefs.current.forEach((card, index) => {
-          if (!card || card.style.pointerEvents === 'none') return;
-
-          const bounds = card.getBoundingClientRect();
-          if (
-            event.clientX < bounds.left ||
-            event.clientX > bounds.right ||
-            event.clientY < bounds.top ||
-            event.clientY > bounds.bottom
-          ) {
-            return;
-          }
-
-          const zIndex = Number(card.style.zIndex) || 0;
-          if (zIndex >= highestZIndex) {
-            highestZIndex = zIndex;
-            hoveredVideoIndex = index;
-          }
-        });
-
-        const nextHoveredId =
-          hoveredVideoIndex >= 0 ? videos[hoveredVideoIndex].id : null;
-        setHoveredId((current) => (current === nextHoveredId ? current : nextHoveredId));
       }}
       onMouseLeave={() => setHoveredId(null)}
       className={`relative w-full overflow-visible flex items-center justify-center perspective-stage select-none ${
