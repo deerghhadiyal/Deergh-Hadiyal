@@ -23,6 +23,7 @@ const PortraitVideoPlayer = memo(function PortraitVideoPlayer({
 }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const playbackPositionRef = useRef(0);
+  const playbackSrc = video.previewSrc || video.src;
 
   useLayoutEffect(() => {
     const player = videoRef.current;
@@ -60,12 +61,12 @@ const PortraitVideoPlayer = memo(function PortraitVideoPlayer({
       }
       player.pause();
     };
-  }, [isPlaying, video.src]);
+  }, [isPlaying, playbackSrc]);
 
   return (
     <video
       ref={videoRef}
-      src={isPlaying ? video.src : undefined}
+      src={isPlaying ? playbackSrc : undefined}
       poster={video.poster || undefined}
       muted
       loop

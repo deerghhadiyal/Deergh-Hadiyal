@@ -33,6 +33,7 @@ const showcaseCarouselVideos = VIDEO_SHOWCASE.map((video, index) => ({
   title: video.title,
   category: video.categoryLabel,
   src: video.videoSrc,
+  previewSrc: video.previewSrc,
   poster: video.thumbnail,
   showcaseId: video.id,
   fit: 'contain' as const,

@@ -6,6 +6,7 @@ export interface PortfolioCarouselVideo {
   title: string;
   category: string;
   src: string;
+  previewSrc: string;
   poster: string;
   showcaseId: string;
   fit?: 'cover' | 'contain';
@@ -16,7 +17,10 @@ export interface PortfolioCarouselVideo {
  * Every card strictly renders in a 9:16 portrait aspect ratio with object-fit: cover.
  */
 const encodeVideoAssetName = (fileName: string) =>
-  encodeURIComponent(fileName).replace(/%2B/g, '+');
+  fileName
+    .split('/')
+    .map((segment) => encodeURIComponent(segment).replace(/%2B/g, '+'))
+    .join('/');
 
 const getVideoAssetUrl = (fileName: string) =>
   `https://media.githubusercontent.com/media/deerghhadiyal/Deergh-Hadiyal/main/public/videos/${encodeVideoAssetName(fileName)}`;
@@ -63,6 +67,7 @@ export const portfolioVideos: PortfolioCarouselVideo[] = portfolioVideoFiles.map
     title,
     category,
     src: getVideoAssetUrl(fileName),
+    previewSrc: getVideoAssetUrl(`previews/${fileName}`),
     poster: `/videos/posters/${index + 1}.jpg`,
     showcaseId: `reel-${fileName}`,
   })
@@ -97,6 +102,7 @@ export interface VideoShowcaseItem {
   description: string;
   thumbnail: string;
   videoSrc: string;
+  previewSrc: string;
   aspect: '16:9' | '9:16';
   featuredSpan?: boolean;
   duration: string;
@@ -282,7 +288,8 @@ const createImportedShowcaseItem = (
   title: string,
   videoSrc: string,
   aspect: VideoShowcaseItem['aspect'],
-  thumbnail?: string
+  thumbnail?: string,
+  previewSrc?: string
 ): VideoShowcaseItem => ({
   id,
   category: 'imported',
@@ -292,6 +299,7 @@ const createImportedShowcaseItem = (
   description: 'Original video shown without cropping, in a muted looping preview.',
   thumbnail: thumbnail ?? (aspect === '9:16' ? reelTalkingHeadImg : heroEditingSuiteImg),
   videoSrc,
+  previewSrc: previewSrc ?? videoSrc,
   aspect,
   duration: 'Looping preview',
   fps: 'Original',
@@ -319,12 +327,20 @@ const importedVideoShowcase: VideoShowcaseItem[] = importedShowcaseFiles.map(
       title,
       getVideoAssetUrl(fileName),
       '16:9',
-      thumbnail ? `/videos/posters/${thumbnail}` : undefined
+      thumbnail ? `/videos/posters/${thumbnail}` : undefined,
+      getVideoAssetUrl(`previews/${fileName}`)
     )
 );
 
 export const PORTFOLIO_REEL_SHOWCASE: VideoShowcaseItem[] = portfolioVideos.map((video) =>
-  createImportedShowcaseItem(video.showcaseId, video.title, video.src, '9:16')
+  createImportedShowcaseItem(
+    video.showcaseId,
+    video.title,
+    video.src,
+    '9:16',
+    video.poster,
+    video.previewSrc
+  )
 );
 
 export const VIDEO_SHOWCASE: VideoShowcaseItem[] = importedVideoShowcase;
