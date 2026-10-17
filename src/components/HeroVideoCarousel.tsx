@@ -1,4 +1,4 @@
-import React, { memo, useState, useEffect, useRef } from 'react';
+import React, { memo, useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { ArrowUpRight, Sparkles, Sliders, TrendingUp, Play } from 'lucide-react';
 import { PortfolioCarouselVideo } from '../data/portfolioData';
 
@@ -24,7 +24,7 @@ const PortraitVideoPlayer = memo(function PortraitVideoPlayer({
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const playbackPositionRef = useRef(0);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const player = videoRef.current;
     if (!player) return;
 
@@ -47,8 +47,6 @@ const PortraitVideoPlayer = memo(function PortraitVideoPlayer({
     const handleLoadedMetadata = () => startPlayback();
 
     player.addEventListener('loadedmetadata', handleLoadedMetadata, { once: true });
-    player.src = video.src;
-    player.load();
 
     return () => {
       cancelled = true;
@@ -57,14 +55,13 @@ const PortraitVideoPlayer = memo(function PortraitVideoPlayer({
         playbackPositionRef.current = player.currentTime;
       }
       player.pause();
-      player.removeAttribute('src');
-      player.load();
     };
   }, [isPlaying, video.src]);
 
   return (
     <video
       ref={videoRef}
+      src={isPlaying ? video.src : undefined}
       poster={video.poster || undefined}
       muted
       loop
