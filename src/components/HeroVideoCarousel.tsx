@@ -108,7 +108,7 @@ export function CircularPortraitOrbit({
   const isRing = mode === 'ring';
   const [hoveredId, setHoveredId] = useState<number | null>(null);
   const [tappedId, setTappedId] = useState<number | null>(null);
-  const [isVisibleInViewport, setIsVisibleInViewport] = useState<boolean>(false);
+  const [isVisibleInViewport, setIsVisibleInViewport] = useState<boolean>(true);
   const initialCenterIndex = Math.floor(total / 2) % total;
   const [autoPlayId, setAutoPlayId] = useState<number | null>(
     () => videos[initialCenterIndex]?.id ?? null
