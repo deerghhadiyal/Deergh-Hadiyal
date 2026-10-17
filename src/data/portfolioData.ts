@@ -15,6 +15,9 @@ export interface PortfolioCarouselVideo {
  * 9:16 Portrait Video Cards for the Continuous Circular/Orbiting 3D Stage.
  * Every card strictly renders in a 9:16 portrait aspect ratio with object-fit: cover.
  */
+const encodeVideoAssetName = (fileName: string) =>
+  encodeURIComponent(fileName).replace(/%2B/g, '+');
+
 const portfolioVideoFiles = [
   ['WhatsApp Video 2026-09-13 at 2.11.00 PM.mp4', 'WhatsApp Reel', 'Creator Reel'],
   ['AE-Giveaway-PR.mp4', 'AE Giveaway PR', 'Brand Reel'],
@@ -28,6 +31,27 @@ const portfolioVideoFiles = [
   ['SAMPLE(1).mp4', 'YT EDIT', 'Short-Form Reel'],
   ['SHIVJI.mp4', 'Shivji', 'Cinematic Reel'],
   ['trading.mp4', 'Trading VIDEO EDIT', 'Creator Reel'],
+  ['music_edit.mp4', 'Music Edit', 'Short-Form Reel'],
+  ['REEL 1.mp4', 'MINECRFAT Reel 1', 'Short-Form Reel'],
+  ['REEL 8.mp4', 'MINECRFAT Reel 8', 'Short-Form Reel'],
+  ['REEL 9.mp4', 'MINECRFAT Reel 9', 'Short-Form Reel'],
+  ['ROST EDIT.mp4', 'Roast Edit', 'Creator Reel'],
+  ['SAMPLE LIKE AYUSH BHANDARI 2.mp4', 'Ayush Bhandari Sample 2', 'Creator Reel'],
+  ['sigma edit.mp4', 'Sigma Edit', 'Short-Form Reel'],
+  ['TALKIING HEAD EDIT 1.mp4', 'Talking Head Edit 1', 'Talking Head Reel'],
+  ['TALKING HEAD + MOTION GRAPHICS.mp4', 'Talking Head + Motion Graphics', 'Talking Head Reel'],
+  ['TALKING HEAD 3.mp4', 'Talking Head Edit 3', 'Talking Head Reel'],
+  ['TALKING HEAD 4.mp4', 'Talking Head Edit 4', 'Talking Head Reel'],
+  ['TALKING HEAD SAMPLE 2.mp4', 'Talking Head Sample 2', 'Talking Head Reel'],
+  ['TRADING REEL CLIP FINDER 1.mp4', 'Trading Reel Clip Finder 1', 'Creator Reel'],
+  ['TRADING REEL CLIP FINDER 3.mp4', 'Trading Reel Clip Finder 3', 'Creator Reel'],
+  ['YT SHORT.mp4', 'YouTube Short', 'Short-Form Reel'],
+  ['2D ANIMATION EDIT.mp4', '2D Animation Edit', 'Motion Graphics Reel'],
+  ['AI EDIT 1.mp4', 'AI Edit 1', 'Creator Reel'],
+  ['AI EDIT 3.mp4', 'AI Edit 3', 'Creator Reel'],
+  ['FF EDIT.mp4', 'FF Edit', 'Creator Reel'],
+  ['Motion-Graphic-1.mp4', 'Motion Graphic 1', 'Motion Graphics Reel'],
+  ['Motion-Graphic-2.mp4', 'Motion Graphic 2', 'Motion Graphics Reel'],
 ] as const;
 
 export const portfolioVideos: PortfolioCarouselVideo[] = portfolioVideoFiles.map(
@@ -35,8 +59,8 @@ export const portfolioVideos: PortfolioCarouselVideo[] = portfolioVideoFiles.map
     id: index + 1,
     title,
     category,
-    src: `/videos/${encodeURIComponent(fileName)}`,
-    poster: reelTalkingHeadImg,
+    src: `/videos/${encodeVideoAssetName(fileName)}`,
+    poster: `/videos/posters/${index + 1}.jpg`,
     showcaseId: `reel-${fileName}`,
   })
 );
@@ -236,13 +260,26 @@ const importedShowcaseFiles = [
   ['SAMPLE 6(1).mp4', 'YT EDIT'],
   ['Sequence 01_2.mp4', 'DOCUMENTARY EDIT WITH AI'],
   ['solar system.mp4', 'Solar System'],
+  ['AI DOCUMNETORY EDIT.mp4', 'AI Documentary Edit', 'ai-documentary.jpg'],
+  ['AI EDIT 2.mp4', 'AI Edit 2', 'ai-edit-2.jpg'],
+  ['DOCUMENTORY EDIT 1.mp4', 'Documentary Edit 1', 'documentory-edit-1.jpg'],
+  ['FF EDIT (2).mp4', 'FF Edit 2', 'ff-edit-2.jpg'],
+  ['KYT-9-PHOTOSHOP-INTRO EDIT.mp4', 'KYT Photoshop Intro', 'kyt-9-photoshop-intro.jpg'],
+  ['KYT-10-Framer-INTRO EDIT.mp4', 'KYT Framer Intro Edit', 'kyt-10-framer-intro-edit.jpg'],
+  ['MINECRAFT EDIT.mp4', 'Minecraft Edit', 'minecraft-edit.jpg'],
+  ['MINECRFAT EDIT CINEMATICS.mp4', 'Minecraft Cinematics', 'minecraft-cinematics.jpg'],
+  ['PODCAST EDIT 2.mp4', 'Podcast Edit 2', 'podcast-edit-2.jpg'],
+  ['REAL ESTATE.mp4', 'Real Estate Edit', 'real-estate.jpg'],
+  ['SAMPLE.mp4', 'Sample Edit', 'sample-video.jpg'],
+  ['TALKING HEAD SAMPLE.mp4', 'Talking Head Sample', 'talking-head-sample.jpg'],
 ] as const;
 
 const createImportedShowcaseItem = (
   id: string,
   title: string,
   videoSrc: string,
-  aspect: VideoShowcaseItem['aspect']
+  aspect: VideoShowcaseItem['aspect'],
+  thumbnail?: string
 ): VideoShowcaseItem => ({
   id,
   category: 'imported',
@@ -250,7 +287,7 @@ const createImportedShowcaseItem = (
   title,
   subtitle: `Imported ${aspect} portfolio video`,
   description: 'Original video shown without cropping, in a muted looping preview.',
-  thumbnail: aspect === '9:16' ? reelTalkingHeadImg : heroEditingSuiteImg,
+  thumbnail: thumbnail ?? (aspect === '9:16' ? reelTalkingHeadImg : heroEditingSuiteImg),
   videoSrc,
   aspect,
   duration: 'Looping preview',
@@ -273,12 +310,13 @@ const createImportedShowcaseItem = (
 });
 
 const importedVideoShowcase: VideoShowcaseItem[] = importedShowcaseFiles.map(
-  ([fileName, title]) =>
+  ([fileName, title, thumbnail]) =>
     createImportedShowcaseItem(
       `imported-${fileName}`,
       title,
       `/videos/${encodeURIComponent(fileName)}`,
-      '16:9'
+      '16:9',
+      thumbnail ? `/videos/posters/${thumbnail}` : undefined
     )
 );
 

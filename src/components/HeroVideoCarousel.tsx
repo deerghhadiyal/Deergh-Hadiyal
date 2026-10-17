@@ -47,7 +47,7 @@ function PortraitVideoPlayer({
       muted
       loop
       playsInline
-      preload={isPlaying ? 'auto' : 'metadata'}
+      preload={isPlaying ? 'auto' : 'none'}
       style={{
         transform: isZoomed ? 'scale(1.12)' : 'scale(1)',
         transition: 'transform 650ms cubic-bezier(0.22, 1, 0.36, 1)',
@@ -164,7 +164,10 @@ export function CircularPortraitOrbit({
           }
 
           const cardWidth = cardOrbitRefs.current[0]?.offsetWidth ?? Math.min(stageWidth * 0.82, 420);
-          const radius = cardWidth / (2 * Math.tan(Math.PI / total)) * 1.08;
+          const radius = Math.min(
+            (cardWidth / (2 * Math.tan(Math.PI / total))) * 1.08,
+            stageWidth * 1.15
+          );
           const rotationDegrees = (phaseRef.current * 360) / total;
 
           for (let i = 0; i < total; i++) {
@@ -400,7 +403,9 @@ export function CircularPortraitOrbit({
               }}
               className={`absolute cursor-pointer ${
                 isRing
-                  ? 'w-[82vw] max-w-[420px] aspect-video'
+                  ? total > 7
+                    ? 'w-[40vw] max-w-[260px] sm:w-[34vw] sm:max-w-[280px] aspect-video'
+                    : 'w-[82vw] max-w-[420px] aspect-video'
                   : isPortrait
                   ? 'w-[142px] sm:w-[172px] md:w-[196px] lg:w-[214px] aspect-[9/16]'
                   : 'w-[82vw] max-w-[420px] aspect-video'
@@ -431,7 +436,7 @@ export function CircularPortraitOrbit({
                 {/* Preserve source framing when the card ratio differs from the video. */}
                 <PortraitVideoPlayer
                   video={video}
-                  isPlaying={isVisibleInViewport}
+                  isPlaying={isVisibleInViewport && isFocused}
                   isZoomed={isPortrait && isHovered}
                 />
 
@@ -447,26 +452,42 @@ export function CircularPortraitOrbit({
                     isFocused ? 'opacity-100' : 'opacity-0'
                   }`}
                 >
-                  <span className="px-2 py-0.5 rounded-full bg-[#332D26] text-[#F2EEE6] text-[10px] font-mono-tabular font-bold">
+                  <span className={`px-2 py-0.5 rounded-full bg-[#332D26] text-[#F2EEE6] ${
+                    isPortrait ? 'text-[10px]' : 'text-[8px]'
+                  } font-mono-tabular font-bold`}>
                     {aspectRatio}
                   </span>
                 </div>
 
                 {/* Bottom Card Info Overlay (Smoothly Revealed on Hover / Tap) */}
                 <div
-                  className={`pointer-events-none absolute inset-x-0 bottom-0 p-3.5 sm:p-4 bg-gradient-to-t from-[#151311]/95 via-[#151311]/70 to-transparent transition-all duration-400 ${
+                  className={`pointer-events-none absolute inset-x-0 bottom-0 ${
+                    isPortrait ? 'p-3.5 sm:p-4' : 'p-2 sm:p-3'
+                  } bg-gradient-to-t from-[#151311]/95 via-[#151311]/70 to-transparent transition-all duration-400 ${
                     isFocused
                       ? 'opacity-100 translate-y-0'
                       : 'opacity-0 translate-y-2'
                   }`}
                 >
-                  <div className="text-[10px] font-mono-tabular text-[#C9BFAF] uppercase tracking-wider mb-0.5 truncate">
+                  <div className={`font-mono-tabular text-[#C9BFAF] uppercase mb-0.5 truncate ${
+                    isPortrait ? 'text-[10px] tracking-wider' : 'text-[8px] sm:text-[9px] tracking-wider'
+                  }`}>
                     {video.category}
                   </div>
-                  <div className="font-display text-xs sm:text-sm font-bold text-[#F2EEE6] leading-snug line-clamp-2 mb-2">
+                  <div
+                    className={`font-display font-bold text-[#F2EEE6] leading-snug ${
+                      isPortrait ? 'text-xs sm:text-sm' : 'text-[10px] sm:text-[11px]'
+                    } ${
+                      isPortrait ? 'line-clamp-2 mb-2' : 'line-clamp-1 mb-1'
+                    }`}
+                  >
                     {video.title}
                   </div>
-                  <div className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#E4AE58]">
+                  <div
+                    className={`inline-flex items-center gap-1 font-semibold text-[#E4AE58] ${
+                      isPortrait ? 'text-[10px]' : 'text-[7px] sm:text-[8px]'
+                    }`}
+                  >
                     <Play className="w-2.5 h-2.5 fill-[#E4AE58]" />
                     <span>INSPECT REEL</span>
                     <ArrowUpRight className="w-3 h-3" />
